@@ -184,3 +184,15 @@ class LeaderboardSerializer(serializers.Serializer):
     total_points = serializers.IntegerField()
     badge_count = serializers.IntegerField()
     rank = serializers.IntegerField()
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    """Serializer for password change"""
+    old_password = serializers.CharField(required=True, style={'input_type': 'password'})
+    new_password = serializers.CharField(required=True, min_length=6, style={'input_type': 'password'})
+    confirm_password = serializers.CharField(required=True, style={'input_type': 'password'})
+    
+    def validate(self, attrs):
+        if attrs['new_password'] != attrs['confirm_password']:
+            raise serializers.ValidationError({'confirm_password': 'Passwords do not match'})
+        return attrs

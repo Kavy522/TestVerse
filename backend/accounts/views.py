@@ -64,6 +64,10 @@ class StaffStudentListView(generics.ListAPIView):
         return StudentListSerializer
     
     def get_queryset(self):
+        # Handle schema generation (no authenticated user)
+        if not hasattr(self, 'request') or not self.request or not self.request.user.is_authenticated:
+            return User.objects.none()
+        
         # Only staff can view users
         if self.request.user.role != 'staff':
             return User.objects.none()
@@ -116,6 +120,7 @@ class StaffStudentDetailView(generics.RetrieveUpdateAPIView):
 class ChangePasswordView(generics.GenericAPIView):
     """Change user password"""
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = serializers.ChangePasswordSerializer
     
     def post(self, request, *args, **kwargs):
         user = request.user

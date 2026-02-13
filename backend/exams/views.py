@@ -44,6 +44,10 @@ class StudentExamListView(generics.ListAPIView):
     ordering = ['-created_at']
     
     def get_queryset(self):
+        # Handle schema generation (no authenticated user)
+        if getattr(self, 'swagger_fake_view', False):
+            return Exam.objects.none()
+        
         now = timezone.now()
         user = self.request.user
         
@@ -92,6 +96,7 @@ class StudentExamDetailView(generics.RetrieveAPIView):
 class StudentStartExamView(generics.CreateAPIView):
     """Start or resume exam attempt for student"""
     permission_classes = [permissions.IsAuthenticated, IsStudent]
+    serializer_class = serializers.ExamAttemptSerializer
     
     def _build_questions_with_answers(self, exam, attempt, request):
         """Build questions list including saved student answers for resume"""

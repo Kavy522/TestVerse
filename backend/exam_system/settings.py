@@ -229,6 +229,9 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': 'A comprehensive exam management system for universities',
     'VERSION': '1.0.0',
     'SERVE_PERMISSIONS': ['rest_framework.permissions.AllowAny'],
+    'ENABLE_DJANGO_DEVELOPMENT_WARNING': False,
+    'COMPONENT_SPLIT_REQUEST': True,
+    'DISABLE_ERRORS': True,
 }
 
 # Logging Configuration
