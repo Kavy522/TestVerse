@@ -96,7 +96,7 @@ class StudentExamDetailView(generics.RetrieveAPIView):
 class StudentStartExamView(generics.CreateAPIView):
     """Start or resume exam attempt for student"""
     permission_classes = [permissions.IsAuthenticated, IsStudent]
-    serializer_class = serializers.ExamAttemptSerializer
+    serializer_class = ExamAttemptSerializer
     
     def _build_questions_with_answers(self, exam, attempt, request):
         """Build questions list including saved student answers for resume"""

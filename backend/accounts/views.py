@@ -6,7 +6,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from accounts.models import User
 from accounts.serializers import (
-    UserRegistrationSerializer, UserProfileSerializer, UserDetailSerializer
+    UserRegistrationSerializer, UserProfileSerializer, UserDetailSerializer,
+    ChangePasswordSerializer
 )
 
 
@@ -120,7 +121,7 @@ class StaffStudentDetailView(generics.RetrieveUpdateAPIView):
 class ChangePasswordView(generics.GenericAPIView):
     """Change user password"""
     permission_classes = [permissions.IsAuthenticated]
-    serializer_class = serializers.ChangePasswordSerializer
+    serializer_class = ChangePasswordSerializer
     
     def post(self, request, *args, **kwargs):
         user = request.user
