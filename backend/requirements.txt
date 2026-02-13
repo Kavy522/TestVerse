@@ -11,4 +11,5 @@ python-dateutil
 django-cors-headers
 django-filter
 drf-spectacular
+whitenoise==6.6.0
 gunicorn

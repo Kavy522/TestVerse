@@ -11,11 +11,17 @@ from exams.views import (
     StaffCodePlagiarismCheckView, StaffExamLiveMonitorView, StaffExamAnalyticsView,
     StaffBulkPublishResultsView
 )
+from django.http import JsonResponse
+
+# Health check endpoint
+def health_check(request):
+    return JsonResponse({'status': 'healthy', 'service': 'exam-system-api'})
 
 router = DefaultRouter()
 router.register(r'staff/exams', StaffExamViewSet, basename='staff-exams')
 
 urlpatterns = [
+    path('health/', health_check, name='health-check'),
     path('', include(router.urls)),
     
     # Student endpoints
