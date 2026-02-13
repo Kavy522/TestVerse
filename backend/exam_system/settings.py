@@ -199,7 +199,10 @@ else:
     CORS_ALLOW_ALL_ORIGINS = False
     CORS_ALLOWED_ORIGINS = [
         "https://your-frontend-domain.onrender.com",  # Update with your frontend URL
-        "https://your-app-name.onrender.com",
+        "https://testverse-frontend.onrender.com",    # If you deploy frontend
+        "https://testverse-backend.onrender.com",
+        "http://127.0.0.1:3000",                      # Local development
+        "http://localhost:3000",                      # Alternative local development
     ]
 
 CORS_ALLOW_CREDENTIALS = True
