@@ -44,10 +44,6 @@ class StudentExamListView(generics.ListAPIView):
     ordering = ['-created_at']
     
     def get_queryset(self):
-        # Handle schema generation (no authenticated user)
-        if getattr(self, 'swagger_fake_view', False):
-            return Exam.objects.none()
-        
         now = timezone.now()
         user = self.request.user
         
@@ -96,7 +92,10 @@ class StudentExamDetailView(generics.RetrieveAPIView):
 class StudentStartExamView(generics.CreateAPIView):
     """Start or resume exam attempt for student"""
     permission_classes = [permissions.IsAuthenticated, IsStudent]
-    serializer_class = ExamAttemptSerializer
+    
+    def get_serializer_class(self):
+        from exams.serializers import ExamAttemptSerializer
+        return ExamAttemptSerializer
     
     def _build_questions_with_answers(self, exam, attempt, request):
         """Build questions list including saved student answers for resume"""
@@ -257,6 +256,10 @@ class StudentSaveAnswerView(generics.UpdateAPIView):
 class StudentSubmitExamView(generics.CreateAPIView):
     """Submit exam - always allows submit for in-progress attempts"""
     permission_classes = [permissions.IsAuthenticated, IsStudent]
+    
+    def get_serializer_class(self):
+        from rest_framework import serializers
+        return serializers.Serializer  # No input data needed
     
     def create(self, request, *args, **kwargs):
         exam_id = kwargs.get('exam_id')
@@ -608,6 +611,10 @@ class StaffSubmissionDetailView(generics.RetrieveAPIView):
     permission_classes = [permissions.IsAuthenticated, IsStaff]
     lookup_field = 'attempt_id'
     
+    def get_serializer_class(self):
+        from exams.serializers import SubmissionDetailSerializer
+        return SubmissionDetailSerializer
+    
     def get_queryset(self):
         return ExamAttempt.objects.all()
     
@@ -625,6 +632,10 @@ class StaffSubmissionDetailView(generics.RetrieveAPIView):
 class StaffEvaluateAnswerView(generics.CreateAPIView):
     """Evaluate descriptive/coding answers"""
     permission_classes = [permissions.IsAuthenticated, IsStaff]
+    
+    def get_serializer_class(self):
+        from exams.serializers import QuestionEvaluationSerializer
+        return QuestionEvaluationSerializer
     
     def create(self, request, *args, **kwargs):
         attempt_id = kwargs.get('attempt_id')
@@ -680,6 +691,10 @@ class StaffResultListView(generics.ListAPIView):
 class StaffQuestionEvaluateView(generics.CreateAPIView):
     """Evaluate a specific question for a student"""
     permission_classes = [permissions.IsAuthenticated, IsStaff]
+    
+    def get_serializer_class(self):
+        from exams.serializers import QuestionEvaluationSerializer
+        return QuestionEvaluationSerializer
     
     def create(self, request, *args, **kwargs):
         exam_id = kwargs.get('exam_id')
@@ -752,6 +767,10 @@ class StaffResultAnswersView(generics.RetrieveAPIView):
     permission_classes = [permissions.IsAuthenticated, IsStaff]
     lookup_field = 'result_id'
     
+    def get_serializer_class(self):
+        from exams.serializers import SubmissionDetailSerializer
+        return SubmissionDetailSerializer
+    
     def get_queryset(self):
         return Result.objects.all()
     
@@ -821,6 +840,10 @@ class StaffBulkPublishResultsView(generics.CreateAPIView):
     """Publish/Unpublish ALL results for an exam"""
     permission_classes = [permissions.IsAuthenticated, IsStaff]
     
+    def get_serializer_class(self):
+        from exams.serializers import BulkPublishResultsSerializer
+        return BulkPublishResultsSerializer
+    
     def create(self, request, *args, **kwargs):
         exam_id = kwargs.get('exam_id')
         action = request.data.get('action') # 'publish' or 'unpublish'
@@ -858,6 +881,10 @@ class StaffExamAnalyticsView(generics.RetrieveAPIView):
     """Get detailed analytics for an exam"""
     permission_classes = [permissions.IsAuthenticated, IsStaff]
     lookup_field = 'exam_id'
+    
+    def get_serializer_class(self):
+        from exams.serializers import ExamAnalyticsSerializer
+        return ExamAnalyticsSerializer
     
     def get_queryset(self):
         return Exam.objects.all()
@@ -1002,6 +1029,10 @@ class StaffExamTimeExtensionListView(generics.ListAPIView):
 class StaffBulkFeedbackView(generics.CreateAPIView):
     """Assign feedback/score to multiple results"""
     permission_classes = [permissions.IsAuthenticated, IsStaff]
+    
+    def get_serializer_class(self):
+        from exams.serializers import BulkFeedbackSerializer
+        return BulkFeedbackSerializer
     
     def create(self, request, *args, **kwargs):
         exam_id = kwargs.get('exam_id')
@@ -1202,6 +1233,10 @@ class StaffCodePlagiarismCheckView(generics.ListAPIView):
 class StaffExamLiveMonitorView(generics.GenericAPIView):
     """Monitor live exam progress for staff - see students taking exam in real-time"""
     permission_classes = [permissions.IsAuthenticated, IsStaff]
+    
+    def get_serializer_class(self):
+        from rest_framework import serializers
+        return serializers.Serializer  # No input data needed
     
     def get(self, request, exam_id, *args, **kwargs):
         try:

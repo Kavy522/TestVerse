@@ -1,0 +1,49 @@
+# Supabase Database Migration Instructions
+
+## Steps to Complete the Migration:
+
+1. **Set Your Supabase Password**
+   - Open `/Users/thakarkavy/Developer/TestVerse/backend/.env`
+   - Replace `your-supabase-password-here` with your actual Supabase database password
+   - The line should look like: `DATABASE_PASSWORD=your_actual_password`
+
+2. **Test the Connection**
+   ```bash
+   cd /Users/thakarkavy/Developer/TestVerse/backend
+   source venv/bin/activate
+   python test_db_connection.py
+   ```
+
+3. **Run Database Migrations**
+   ```bash
+   python manage.py makemigrations
+   python manage.py migrate
+   ```
+
+4. **Create Superuser (if needed)**
+   ```bash
+   python manage.py createsuperuser
+   ```
+
+## Environment Variables Summary:
+
+Your `.env` file should contain:
+```env
+# Database - Supabase PostgreSQL
+DATABASE_URL=postgresql://postgres:[YOUR-PASSWORD]@db.dnayjechvtorpnfjplhz.supabase.co:5432/postgres
+DATABASE_PASSWORD=your_actual_supabase_password
+
+# Other settings...
+DEBUG=True
+SECRET_KEY=your-secret-key-here-change-in-production
+ALLOWED_HOSTS=localhost,127.0.0.1
+```
+
+## Fallback to SQLite:
+If you want to continue using SQLite locally, simply comment out the DATABASE_URL line:
+```env
+# DATABASE_URL=postgresql://postgres:[YOUR-PASSWORD]@db.dnayjechvtorpnfjplhz.supabase.co:5432/postgres
+DATABASE_PASSWORD=your_actual_supabase_password
+```
+
+The application will automatically fall back to SQLite when DATABASE_URL is not set.

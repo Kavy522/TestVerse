@@ -186,13 +186,25 @@ class LeaderboardSerializer(serializers.Serializer):
     rank = serializers.IntegerField()
 
 
-class ChangePasswordSerializer(serializers.Serializer):
-    """Serializer for password change"""
-    old_password = serializers.CharField(required=True, style={'input_type': 'password'})
-    new_password = serializers.CharField(required=True, min_length=6, style={'input_type': 'password'})
-    confirm_password = serializers.CharField(required=True, style={'input_type': 'password'})
+class NotificationMarkReadSerializer(serializers.Serializer):
+    """Serializer for marking notifications as read"""
+    notification_ids = serializers.ListField(
+        child=serializers.UUIDField(), 
+        required=False,
+        allow_empty=True
+    )
+    mark_all = serializers.BooleanField(default=False)
     
     def validate(self, attrs):
-        if attrs['new_password'] != attrs['confirm_password']:
-            raise serializers.ValidationError({'confirm_password': 'Passwords do not match'})
+        if not attrs.get('mark_all') and not attrs.get('notification_ids'):
+            raise serializers.ValidationError('Either notification_ids or mark_all must be provided')
         return attrs
+
+
+class StudentAnalyticsSerializer(serializers.Serializer):
+    """Serializer for student analytics data"""
+    total_exams_taken = serializers.IntegerField()
+    average_score = serializers.DecimalField(max_digits=5, decimal_places=2)
+    total_points = serializers.IntegerField()
+    badge_count = serializers.IntegerField()
+    pass_rate = serializers.DecimalField(max_digits=5, decimal_places=2)

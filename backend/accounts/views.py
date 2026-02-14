@@ -6,8 +6,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from accounts.models import User
 from accounts.serializers import (
-    UserRegistrationSerializer, UserProfileSerializer, UserDetailSerializer,
-    ChangePasswordSerializer
+    UserRegistrationSerializer, UserProfileSerializer, UserDetailSerializer
 )
 
 
@@ -65,10 +64,6 @@ class StaffStudentListView(generics.ListAPIView):
         return StudentListSerializer
     
     def get_queryset(self):
-        # Handle schema generation (no authenticated user)
-        if not hasattr(self, 'request') or not self.request or not self.request.user.is_authenticated:
-            return User.objects.none()
-        
         # Only staff can view users
         if self.request.user.role != 'staff':
             return User.objects.none()
@@ -121,7 +116,10 @@ class StaffStudentDetailView(generics.RetrieveUpdateAPIView):
 class ChangePasswordView(generics.GenericAPIView):
     """Change user password"""
     permission_classes = [permissions.IsAuthenticated]
-    serializer_class = ChangePasswordSerializer
+    
+    def get_serializer_class(self):
+        from accounts.serializers import ChangePasswordSerializer
+        return ChangePasswordSerializer
     
     def post(self, request, *args, **kwargs):
         user = request.user
@@ -187,6 +185,10 @@ class NotificationMarkReadView(generics.GenericAPIView):
     """Mark notifications as read"""
     permission_classes = [permissions.IsAuthenticated]
     
+    def get_serializer_class(self):
+        from accounts.serializers import NotificationMarkReadSerializer
+        return NotificationMarkReadSerializer
+    
     def post(self, request, *args, **kwargs):
         from accounts.models import Notification
         
@@ -209,6 +211,10 @@ class NotificationMarkReadView(generics.GenericAPIView):
 class NotificationCountView(generics.GenericAPIView):
     """Get unread notification count"""
     permission_classes = [permissions.IsAuthenticated]
+    
+    def get_serializer_class(self):
+        from rest_framework import serializers
+        return serializers.Serializer  # No input data needed
     
     def get(self, request, *args, **kwargs):
         from accounts.models import Notification
@@ -303,6 +309,10 @@ class LeaderboardView(generics.GenericAPIView):
     """Get leaderboard with top students by points"""
     permission_classes = [permissions.IsAuthenticated]
     
+    def get_serializer_class(self):
+        from accounts.serializers import LeaderboardSerializer
+        return LeaderboardSerializer
+    
     def get(self, request, *args, **kwargs):
         from accounts.models import User, UserPoints, UserBadge
         from django.db.models import Sum, Count
@@ -371,6 +381,10 @@ class UserPointsHistoryView(generics.ListAPIView):
 class StudentAnalyticsView(generics.GenericAPIView):
     """Get student analytics: performance trends, stats"""
     permission_classes = [permissions.IsAuthenticated]
+    
+    def get_serializer_class(self):
+        from accounts.serializers import StudentAnalyticsSerializer
+        return StudentAnalyticsSerializer
     
     def get(self, request, *args, **kwargs):
         from exams.models import Result, ExamAttempt

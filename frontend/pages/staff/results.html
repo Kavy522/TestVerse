@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Exam Results & Grading - University Exam Portal">
+  <title>Results & Grading - University Exam Portal</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../css/styles.css">
+  
+  <link rel="stylesheet" href="../../css/pages/staff/results.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container">
+      <div class="navbar-content">
+        <a href="../../index.html" class="navbar-brand">
+          <div class="navbar-logo">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+            </svg>
+          </div>
+          Exam Portal
+        </a>
+        <div class="navbar-menu">
+          <a href="dashboard.html" class="navbar-link">Dashboard</a>
+          <a href="exams.html" class="navbar-link">Exams</a>
+          <a href="students.html" class="navbar-link">Students</a>
+          <a href="results.html" class="navbar-link active">Results</a>
+        </div>
+        <div class="navbar-user">
+          <span class="badge badge-primary">Staff</span>
+          <button class="btn btn-ghost btn-sm" onclick="Auth.logout()">Logout</button>
+        </div>
+      </div>
+    </div>
+  </nav>
+  
+  <main class="main-content">
+    <div class="container">
+      <div class="page-header animate-fadeInUp">
+        <div>
+          <h1 class="text-3xl font-bold" id="page-title">Results & Grading</h1>
+          <p class="text-muted" id="exam-subtitle">Select an exam to grade & publish results</p>
+        </div>
+        <div class="flex gap-3">
+          <select class="form-input form-select" id="exam-select" style="min-width: 250px;">
+            <option value="">Select an exam</option>
+          </select>
+        </div>
+      </div>
+      
+      <!-- Action Buttons Bar -->
+      <div class="action-bar" id="action-bar" style="display: none;">
+        <div class="action-bar-left">
+          <button class="btn btn-primary" id="generate-btn" onclick="autoGradeMCQs()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+            </svg>
+            Auto-Grade MCQs
+          </button>
+        </div>
+        <div class="action-bar-right">
+          <div class="grading-summary" id="grading-summary"></div>
+          <button class="btn btn-success" id="publish-all-btn" onclick="bulkPublish('publish')" disabled>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+              <polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+            Publish All Results
+          </button>
+          <button class="btn btn-warning" id="unpublish-all-btn" onclick="bulkPublish('unpublish')" style="display: none;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+              <line x1="1" y1="1" x2="23" y2="23"/>
+            </svg>
+            Unpublish All
+          </button>
+        </div>
+      </div>
+      
+      <!-- Analytics -->
+      <div class="analytics-card mb-8" id="analytics-section" style="display: none;">
+        <h3 class="text-lg font-semibold mb-6">Grading Overview</h3>
+        <div class="analytics-grid" id="analytics-grid">
+          <div class="analytics-item">
+            <div class="analytics-value text-primary" id="total-attempts">-</div>
+            <div class="analytics-label">Total Submissions</div>
+          </div>
+          <div class="analytics-item">
+            <div class="analytics-value text-warning" id="needs-grading">-</div>
+            <div class="analytics-label">Need Grading</div>
+          </div>
+          <div class="analytics-item">
+            <div class="analytics-value text-success" id="fully-graded">-</div>
+            <div class="analytics-label">Fully Graded</div>
+          </div>
+          <div class="analytics-item">
+            <div class="analytics-value" id="published-count">-</div>
+            <div class="analytics-label">Published</div>
+          </div>
+        </div>
+        <div class="progress-bar-container">
+          <div class="progress-label">
+            <span>Grading Progress</span>
+            <span id="grading-progress-text">0 / 0 graded</span>
+          </div>
+          <div class="progress" style="height: 12px;">
+            <div class="progress-bar progress-bar-success" id="grading-bar" style="width: 0%;"></div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Results Table -->
+      <div class="results-table-container" id="results-section" style="display: none;">
+        <div class="table-header">
+          <h3 class="text-lg font-semibold">Student Results</h3>
+          <input type="text" class="form-input" id="search-input" placeholder="Search student..." style="max-width: 250px;">
+        </div>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>Score</th>
+              <th>Percentage</th>
+              <th>Grading</th>
+              <th>Status</th>
+              <th>Submitted At</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="results-tbody">
+            <tr><td colspan="7" class="text-center p-8 text-muted">Select an exam to view results</td></tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <div class="empty-state" id="empty-state">
+        <div class="empty-state-icon">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 20V10M12 20V4M6 20v-6"/>
+          </svg>
+        </div>
+        <h3 class="empty-state-title">Select an Exam</h3>
+        <p class="empty-state-description">Choose an exam from the dropdown above to grade and publish results.</p>
+      </div>
+    </div>
+  </main>
+  
+  <!-- Grading Modal -->
+  <div class="grading-overlay" id="grading-overlay" style="display: none;">
+    <div class="grading-panel">
+      <div class="grading-panel-header">
+        <div>
+          <h2 class="grading-panel-title" id="grading-student-name">Grade Student</h2>
+          <p class="text-muted text-sm" id="grading-student-info"></p>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="closeGradingPanel()">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="grading-panel-summary" id="grading-panel-summary"></div>
+      <div class="grading-panel-body" id="grading-answers-list">
+        <!-- Answers will be rendered here -->
+      </div>
+      <div class="grading-panel-footer">
+        <div class="grading-total" id="grading-total">Total: 0 / 0</div>
+        <div class="flex gap-3">
+          <button class="btn btn-ghost" onclick="closeGradingPanel()">Cancel</button>
+          <button class="btn btn-primary" id="save-grades-btn" onclick="saveGrades()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+              <polyline points="17 21 17 13 7 13 7 21"/>
+              <polyline points="7 3 7 8 15 8"/>
+            </svg>
+            Save All Grades
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script src="../../js/config.js"></script>
+  <script src="../../js/api.js"></script>
+  <script src="../../js/auth.js"></script>
+  <script src="../../js/utils.js"></script>
+  <script>
+    if (!Auth.requireStaff()) {
+      throw new Error('Unauthorized');
+    }
+    
+    let currentExamId = Utils.getUrlParam('exam');
+    let allResults = [];
+    let currentGradingData = null; // { result, answers }
+    let currentExamData = null; // Stores selected exam details
+    
+    async function loadExams() {
+      try {
+        const response = await API.getStaffExams({ limit: 100 });
+        const exams = response.results || [];
+        
+        const select = document.getElementById('exam-select');
+        select.innerHTML = '<option value="">Select an exam</option>' + 
+          exams.map(e => `<option value="${e.id}" ${e.id === currentExamId ? 'selected' : ''}>${Utils.escapeHtml(e.title)}</option>`).join('');
+        
+        // Store exam data for status checks
+        select._examsData = exams;
+        
+        if (currentExamId) {
+          currentExamData = exams.find(e => e.id === currentExamId) || null;
+          loadResults(currentExamId);
+        }
+      } catch (error) {
+        Utils.showToast('Failed to load exams', 'error');
+      }
+    }
+    
+    async function loadResults(examId) {
+      if (!examId) return;
+      
+      document.getElementById('empty-state').style.display = 'none';
+      document.getElementById('analytics-section').style.display = 'block';
+      document.getElementById('results-section').style.display = 'block';
+      document.getElementById('action-bar').style.display = 'flex';
+      
+      const tbody = document.getElementById('results-tbody');
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" class="p-0">
+            <div class="loading-state">
+              <div class="skeleton skeleton-text" style="width: 100%; height: 48px; margin-bottom: 8px;"></div>
+              <div class="skeleton skeleton-text" style="width: 100%; height: 48px; margin-bottom: 8px;"></div>
+              <div class="skeleton skeleton-text" style="width: 100%; height: 48px;"></div>
+            </div>
+          </td>
+        </tr>
+      `;
+      
+      try {
+        const resultsRes = await API.getExamResults(examId, { limit: 200 });
+        allResults = resultsRes.results || [];
+        updateOverview();
+        renderResults();
+      } catch (error) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7">
+              <div class="error-state">
+                <div class="error-state-icon">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M12 8v4M12 16h.01"/>
+                  </svg>
+                </div>
+                <h3 class="error-state-title">Failed to load results</h3>
+                <p class="error-state-message">${Utils.escapeHtml(error.message)}</p>
+                <button class="btn btn-secondary" onclick="loadResults('${examId}')">
+                  Retry
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }
+    }
+    
+    function updateOverview() {
+      const total = allResults.length;
+      const needsGrading = allResults.filter(r => r.grading_status !== 'fully_graded').length;
+      const fullyGraded = allResults.filter(r => r.grading_status === 'fully_graded').length;
+      const published = allResults.filter(r => r.is_published).length;
+      
+      // Check if exam is still running
+      const now = new Date();
+      const examRunning = currentExamData && new Date(currentExamData.end_time) > now && new Date(currentExamData.start_time) <= now;
+      const examNotStarted = currentExamData && new Date(currentExamData.start_time) > now;
+      
+      document.getElementById('total-attempts').textContent = total;
+      document.getElementById('needs-grading').textContent = needsGrading;
+      document.getElementById('fully-graded').textContent = fullyGraded;
+      document.getElementById('published-count').textContent = published;
+      
+      const pct = total > 0 ? (fullyGraded / total * 100) : 0;
+      document.getElementById('grading-bar').style.width = `${pct}%`;
+      document.getElementById('grading-progress-text').textContent = `${fullyGraded} / ${total} graded`;
+      
+      // Enable/disable publish button
+      const publishBtn = document.getElementById('publish-all-btn');
+      const unpublishBtn = document.getElementById('unpublish-all-btn');
+      const generateBtn = document.getElementById('generate-btn');
+      
+      // Auto-Grade button: disable if exam is still running or not started
+      if (examRunning || examNotStarted) {
+        generateBtn.disabled = true;
+        generateBtn.title = examRunning ? 'Cannot generate results while exam is running' : 'Exam has not started yet';
+        generateBtn.style.opacity = '0.5';
+      } else {
+        generateBtn.disabled = false;
+        generateBtn.title = '';
+        generateBtn.style.opacity = '';
+      }
+      
+      // Publish button: disable if exam running, not all graded, or no results
+      if (examRunning || examNotStarted) {
+        publishBtn.disabled = true;
+        publishBtn.title = examRunning ? 'Cannot publish while exam is running' : 'Exam has not started yet';
+      } else if (total > 0 && fullyGraded === total) {
+        publishBtn.disabled = false;
+        publishBtn.title = '';
+      } else {
+        publishBtn.disabled = true;
+        publishBtn.title = `${needsGrading} student(s) still need grading`;
+      }
+      
+      // Show unpublish if any are published
+      unpublishBtn.style.display = published > 0 ? 'inline-flex' : 'none';
+      
+      // Update grading summary
+      const summaryEl = document.getElementById('grading-summary');
+      if (examRunning) {
+        summaryEl.innerHTML = '<span class="badge badge-info">Exam is currently running</span>';
+      } else if (examNotStarted) {
+        summaryEl.innerHTML = '<span class="badge badge-ghost">Exam has not started yet</span>';
+      } else if (total === 0) {
+        summaryEl.innerHTML = '<span class="text-muted">No results yet. Click "Auto-Grade MCQs" to start.</span>';
+      } else if (needsGrading > 0) {
+        summaryEl.innerHTML = `<span class="badge badge-warning">${needsGrading} student(s) need grading</span>`;
+      } else if (published === total) {
+        summaryEl.innerHTML = '<span class="badge badge-success">All results published</span>';
+      } else {
+        summaryEl.innerHTML = '<span class="badge badge-info">All graded — ready to publish</span>';
+      }
+    }
+    
+    function getGradingBadge(gradingStatus) {
+      const map = {
+        'pending': '<span class="badge badge-warning">Pending</span>',
+        'partially_graded': '<span class="badge badge-info">Partial</span>',
+        'fully_graded': '<span class="badge badge-success">Graded</span>',
+      };
+      return map[gradingStatus] || '<span class="badge badge-ghost">Unknown</span>';
+    }
+    
+    function getStatusBadge(resultStatus) {
+      const map = {
+        'pending': '<span class="badge badge-ghost">Pending</span>',
+        'pass': '<span class="badge badge-success">Passed</span>',
+        'fail': '<span class="badge badge-error">Failed</span>',
+      };
+      return map[resultStatus] || '<span class="badge badge-ghost">-</span>';
+    }
+    
+    function renderResults() {
+      const search = document.getElementById('search-input').value.toLowerCase();
+      const filtered = allResults.filter(r => 
+        r.student_name.toLowerCase().includes(search)
+      );
+      
+      const tbody = document.getElementById('results-tbody');
+      
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center p-8 text-muted">No results found</td></tr>';
+        return;
+      }
+      
+      tbody.innerHTML = filtered.map(r => {
+        const isFullyGraded = r.grading_status === 'fully_graded';
+        
+        return `
+          <tr>
+            <td><strong>${Utils.escapeHtml(r.student_name)}</strong></td>
+            <td>${r.obtained_marks} / ${r.total_marks}</td>
+            <td>
+              <div class="flex items-center gap-3">
+                <div class="score-bar">
+                  <div class="score-bar-fill" style="width: ${r.percentage}%; background: ${isFullyGraded ? (r.status === 'pass' ? 'var(--success)' : 'var(--error)') : 'var(--text-tertiary)'};"></div>
+                </div>
+                <span>${parseFloat(r.percentage).toFixed(1)}%</span>
+              </div>
+            </td>
+            <td>${getGradingBadge(r.grading_status)}</td>
+            <td>${getStatusBadge(r.status)}</td>
+            <td>${Utils.formatDate(r.submitted_at)}</td>
+            <td>
+              <button class="btn btn-primary btn-sm" onclick="openGrading('${r.id}')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+                ${isFullyGraded ? 'Review' : 'Grade'}
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+    
+    // ============ AUTO-GRADE MCQs ============
+    
+    async function autoGradeMCQs() {
+      if (!currentExamId) return;
+      
+      Utils.confirm('Auto-grade MCQ questions for all submitted students? Descriptive and coding answers will need manual grading.', async () => {
+        try {
+          const res = await API.generateResults(currentExamId);
+          Utils.showToast(res.message || 'MCQs auto-graded!', 'success');
+          loadResults(currentExamId);
+        } catch (error) {
+          Utils.showToast(error.message, 'error');
+        }
+      });
+    }
+    
+    // ============ GRADING PANEL ============
+    
+    async function openGrading(resultId) {
+      try {
+        const data = await API.getResultAnswers(resultId);
+        currentGradingData = data;
+        
+        document.getElementById('grading-student-name').textContent = `Grade: ${data.student_name}`;
+        document.getElementById('grading-student-info').textContent = 
+          `${data.student_enrollment_id || 'N/A'} • ${data.exam_title} • ${data.grading_status === 'fully_graded' ? 'All graded' : 'Needs grading'}`;
+        
+        document.getElementById('grading-panel-summary').innerHTML = `
+          <div class="grading-summary-cards">
+            <div class="grading-summary-item">
+              <span class="text-muted text-sm">Current Score</span>
+              <span class="font-semibold">${data.obtained_marks} / ${data.total_marks}</span>
+            </div>
+            <div class="grading-summary-item">
+              <span class="text-muted text-sm">Percentage</span>
+              <span class="font-semibold">${parseFloat(data.percentage).toFixed(1)}%</span>
+            </div>
+            <div class="grading-summary-item">
+              <span class="text-muted text-sm">Status</span>
+              ${getGradingBadge(data.grading_status)}
+            </div>
+          </div>
+        `;
+        
+        renderGradingAnswers(data);
+        
+        document.getElementById('grading-overlay').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+      } catch (error) {
+        Utils.showToast('Failed to load student answers: ' + error.message, 'error');
+      }
+    }
+    
+    function renderGradingAnswers(data) {
+      const list = document.getElementById('grading-answers-list');
+      const answers = data.answers || [];
+      
+      list.innerHTML = answers.map((ans, idx) => {
+        const isMCQ = ans.question_type === 'mcq' || ans.question_type === 'multiple_mcq';
+        const isAutoGraded = isMCQ;
+        const needsGrading = !isAutoGraded && ans.score === null;
+        const currentScore = ans.score !== null ? parseFloat(ans.score) : '';
+        
+        let studentAnswerHTML = '';
+        if (isMCQ) {
+          studentAnswerHTML = `
+            <div class="answer-content answer-mcq">
+              <span class="text-sm text-muted">Student's answer:</span>
+              <span class="font-semibold">${Utils.escapeHtml(String(ans.answer || 'No answer'))}</span>
+              ${ans.correct_answer ? `<span class="text-sm text-success">Correct: ${Utils.escapeHtml(String(ans.correct_answer))}</span>` : ''}
+            </div>
+          `;
+        } else if (ans.question_type === 'coding') {
+          studentAnswerHTML = `
+            <div class="answer-content answer-code">
+              <span class="text-sm text-muted">Student's code:</span>
+              <pre class="code-block">${Utils.escapeHtml(ans.code || ans.answer || 'No code submitted')}</pre>
+            </div>
+          `;
+        } else {
+          // Descriptive
+          studentAnswerHTML = `
+            <div class="answer-content answer-descriptive">
+              <span class="text-sm text-muted">Student's answer:</span>
+              <div class="descriptive-text">${Utils.escapeHtml(String(ans.answer || 'No answer'))}</div>
+              ${ans.correct_answer ? `
+                <details class="sample-answer-details">
+                  <summary class="text-sm text-muted">View sample answer</summary>
+                  <div class="descriptive-text text-sm" style="margin-top: 8px;">${Utils.escapeHtml(String(ans.correct_answer))}</div>
+                </details>
+              ` : ''}
+            </div>
+          `;
+        }
+        
+        return `
+          <div class="grading-answer-card ${needsGrading ? 'needs-grading' : ''} ${isAutoGraded ? 'auto-graded' : ''}">
+            <div class="grading-answer-header">
+              <div class="grading-answer-q">
+                <span class="question-number">Q${idx + 1}</span>
+                <span class="question-type-badge badge ${isMCQ ? 'badge-ghost' : 'badge-warning'}">${ans.question_type.toUpperCase()}</span>
+                <span class="text-sm text-muted">(${parseFloat(ans.max_points)} pts)</span>
+              </div>
+              ${isAutoGraded ? '<span class="badge badge-ghost">Auto-graded</span>' : ''}
+            </div>
+            <div class="grading-answer-question">${Utils.escapeHtml(ans.question_text)}</div>
+            ${studentAnswerHTML}
+            <div class="grading-answer-scoring">
+              <div class="score-input-group">
+                <label class="text-sm font-semibold">Score:</label>
+                <input type="number" 
+                  class="form-input score-input" 
+                  id="score-${ans.id}" 
+                  data-answer-id="${ans.id}"
+                  data-max="${ans.max_points}"
+                  data-question-type="${ans.question_type}"
+                  value="${currentScore}" 
+                  min="0" 
+                  max="${ans.max_points}" 
+                  step="0.5"
+                  ${isAutoGraded ? 'readonly' : ''}
+                  placeholder="0"
+                  oninput="updateGradingTotal()"
+                >
+                <span class="text-sm text-muted">/ ${parseFloat(ans.max_points)}</span>
+              </div>
+              ${!isAutoGraded ? `
+                <div class="feedback-group">
+                  <label class="text-sm font-semibold">Feedback:</label>
+                  <textarea class="form-input feedback-input" 
+                    id="feedback-${ans.id}" 
+                    data-answer-id="${ans.id}"
+                    placeholder="Optional feedback for the student..."
+                    rows="2"
+                  >${ans.feedback || ''}</textarea>
+                </div>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+      
+      updateGradingTotal();
+    }
+    
+    function updateGradingTotal() {
+      if (!currentGradingData) return;
+      const totalMarks = currentGradingData.total_marks;
+      let sumScores = 0;
+      
+      document.querySelectorAll('.score-input').forEach(input => {
+        const val = parseFloat(input.value);
+        const max = parseFloat(input.dataset.max);
+        
+        // Clamp value to max points
+        if (!isNaN(val) && !isNaN(max) && val > max) {
+          input.value = max;
+          Utils.showToast(`Score clamped to max ${max} points`, 'warning');
+        }
+        // Clamp to min 0
+        if (!isNaN(val) && val < 0) {
+          input.value = 0;
+        }
+        
+        const clampedVal = parseFloat(input.value);
+        if (!isNaN(clampedVal)) sumScores += clampedVal;
+      });
+      
+      document.getElementById('grading-total').innerHTML = 
+        `Total: <strong>${sumScores}</strong> / ${totalMarks} (${totalMarks > 0 ? (sumScores / totalMarks * 100).toFixed(1) : 0}%)`;
+    }
+    
+    async function saveGrades() {
+      if (!currentGradingData) return;
+      
+      const btn = document.getElementById('save-grades-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="btn-spinner"></span> Saving...';
+      
+      try {
+        const manualInputs = document.querySelectorAll('.score-input:not([readonly])');
+        let savedCount = 0;
+        
+        for (const input of manualInputs) {
+          const answerId = input.dataset.answerId;
+          const score = parseFloat(input.value);
+          
+          if (isNaN(score)) continue;
+          
+          const feedbackEl = document.getElementById(`feedback-${answerId}`);
+          const feedback = feedbackEl ? feedbackEl.value : '';
+          
+          // Find the question_id for this answer
+          const answer = currentGradingData.answers.find(a => a.id === answerId);
+          if (!answer) continue;
+          
+          await API.evaluateSubmission(currentGradingData.attempt_id, {
+            questionId: answer.question,
+            score: score,
+            feedback: feedback
+          });
+          savedCount++;
+        }
+        
+        Utils.showToast(`Saved ${savedCount} grade(s) successfully!`, 'success');
+        closeGradingPanel();
+        loadResults(currentExamId);
+      } catch (error) {
+        Utils.showToast('Failed to save grades: ' + error.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+            <polyline points="17 21 17 13 7 13 7 21"/>
+            <polyline points="7 3 7 8 15 8"/>
+          </svg>
+          Save All Grades
+        `;
+      }
+    }
+    
+    function closeGradingPanel() {
+      document.getElementById('grading-overlay').style.display = 'none';
+      document.body.style.overflow = '';
+      currentGradingData = null;
+    }
+    
+    // ============ PUBLISH ============
+    
+    async function bulkPublish(action) {
+      if (!currentExamId) return;
+      const actionText = action === 'publish' ? 'PUBLISH all' : 'UNPUBLISH all';
+      
+      Utils.confirm(`Are you sure you want to ${actionText} results? ${action === 'publish' ? 'Students will be able to see their results.' : 'Results will be hidden from students.'}`, async () => {
+        try {
+          await API.bulkPublishResults(currentExamId, action);
+          Utils.showToast(`Results ${action}ed successfully!`, 'success');
+          loadResults(currentExamId);
+        } catch (error) {
+          Utils.showToast(error.message, 'error');
+        }
+      });
+    }
+    
+    // ============ EVENT LISTENERS ============
+    
+    document.getElementById('exam-select').addEventListener('change', (e) => {
+      currentExamId = e.target.value;
+      // Update current exam data reference
+      const select = document.getElementById('exam-select');
+      const examsData = select._examsData || [];
+      currentExamData = examsData.find(ex => ex.id === currentExamId) || null;
+      
+      if (currentExamId) {
+        loadResults(currentExamId);
+      } else {
+        document.getElementById('empty-state').style.display = 'block';
+        document.getElementById('analytics-section').style.display = 'none';
+        document.getElementById('results-section').style.display = 'none';
+        document.getElementById('action-bar').style.display = 'none';
+      }
+    });
+    
+    document.getElementById('search-input').addEventListener('input', Utils.debounce(renderResults, 300));
+    
+    // Close grading panel on Escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && document.getElementById('grading-overlay').style.display !== 'none') {
+        closeGradingPanel();
+      }
+    });
+    
+    loadExams();
+  </script>
+</body>
+</html>

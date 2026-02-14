@@ -375,3 +375,9 @@ class BulkResultsFilterSerializer(serializers.Serializer):
     status = serializers.ChoiceField(choices=['pass', 'fail'], required=False, allow_blank=True)
     department = serializers.CharField(required=False, allow_blank=True)
     limit = serializers.IntegerField(default=100, min_value=1, max_value=1000)
+
+
+class BulkPublishResultsSerializer(serializers.Serializer):
+    """Serializer for bulk publishing results"""
+    publish = serializers.BooleanField(required=True)
+    filter_params = BulkResultsFilterSerializer(required=False)

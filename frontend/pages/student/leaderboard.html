@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Leaderboard - University Exam Portal">
+  <title>Leaderboard - University Exam Portal</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../css/styles.css">
+  <style>
+    .leaderboard-container { max-width: 800px; margin: 0 auto; }
+    
+    .leaderboard-podium {
+      display: flex;
+      justify-content: center;
+      gap: var(--space-4);
+      margin-bottom: var(--space-8);
+      padding: var(--space-6);
+    }
+    
+    .podium-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: var(--space-5);
+      background: var(--bg-secondary);
+      border-radius: var(--radius-xl);
+      min-width: 140px;
+      text-align: center;
+      transition: transform 0.3s;
+    }
+    
+    .podium-item:hover { transform: translateY(-4px); }
+    
+    .podium-item.gold {
+      background: linear-gradient(135deg, #fef08a 0%, #fbbf24 100%);
+      color: #1f2937;
+      order: 2;
+    }
+    
+    .podium-item.silver {
+      background: linear-gradient(135deg, #e5e7eb 0%, #9ca3af 100%);
+      color: #1f2937;
+      order: 1;
+      margin-top: 2rem;
+    }
+    
+    .podium-item.bronze {
+      background: linear-gradient(135deg, #fdba74 0%, #ea580c 100%);
+      color: #1f2937;
+      order: 3;
+      margin-top: 2rem;
+    }
+    
+    .podium-medal {
+      font-size: 2.5rem;
+      margin-bottom: var(--space-2);
+    }
+    
+    .podium-name {
+      font-weight: 600;
+      font-size: 1.125rem;
+      margin-bottom: var(--space-1);
+    }
+    
+    .podium-points {
+      font-weight: 700;
+      font-size: 1.5rem;
+    }
+    
+    .podium-department {
+      font-size: 0.75rem;
+      opacity: 0.8;
+      margin-top: var(--space-1);
+    }
+    
+    /* Leaderboard List */
+    .leaderboard-list {
+      background: var(--bg-secondary);
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+    }
+    
+    .leaderboard-header {
+      display: grid;
+      grid-template-columns: 60px 2fr 1fr 100px;
+      gap: var(--space-4);
+      padding: var(--space-3) var(--space-5);
+      background: var(--bg-tertiary);
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+    }
+    
+    .leaderboard-item {
+      display: grid;
+      grid-template-columns: 60px 2fr 1fr 100px;
+      gap: var(--space-4);
+      padding: var(--space-4) var(--space-5);
+      border-bottom: 1px solid var(--border-color);
+      align-items: center;
+    }
+    
+    .leaderboard-item:last-child { border-bottom: none; }
+    
+    .leaderboard-item.current-user {
+      background: rgba(99, 102, 241, 0.1);
+    }
+    
+    .rank {
+      font-weight: 700;
+      font-size: 1.25rem;
+      color: var(--text-secondary);
+    }
+    
+    .rank-1 { color: #fbbf24; }
+    .rank-2 { color: #9ca3af; }
+    .rank-3 { color: #ea580c; }
+    
+    .user-info { display: flex; flex-direction: column; }
+    .user-name { font-weight: 500; }
+    .user-dept { font-size: 0.75rem; color: var(--text-tertiary); }
+    
+    .badge-count {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      color: var(--text-secondary);
+    }
+    
+    .points-display {
+      font-weight: 700;
+      font-size: 1.25rem;
+      color: var(--primary);
+    }
+    
+    .your-rank {
+      text-align: center;
+      background: var(--bg-secondary);
+      border-radius: var(--radius-lg);
+      padding: var(--space-4);
+      margin-top: var(--space-6);
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="container">
+      <div class="navbar-content">
+        <a href="../../index.html" class="navbar-brand">
+          <div class="navbar-logo">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+            </svg>
+          </div>
+          Exam Portal
+        </a>
+        
+        <div class="navbar-menu">
+          <a href="dashboard.html" class="navbar-link">Dashboard</a>
+          <a href="history.html" class="navbar-link">Exam History</a>
+          <a href="analytics.html" class="navbar-link">Analytics</a>
+          <a href="leaderboard.html" class="navbar-link active">Leaderboard</a>
+        </div>
+        
+        <div class="navbar-user">
+          <button class="btn btn-ghost btn-sm" onclick="Auth.logout()">Logout</button>
+        </div>
+      </div>
+    </div>
+  </nav>
+  
+  <main class="main-content">
+    <div class="container">
+      <div class="leaderboard-container animate-fadeInUp">
+        <div class="text-center" style="margin-bottom: var(--space-8);">
+          <h1 class="text-3xl font-bold">🏆 Leaderboard</h1>
+          <p class="text-muted">Top performers based on points earned</p>
+        </div>
+        
+        <!-- Podium -->
+        <div class="leaderboard-podium" id="podium">
+          <div class="loading-state"><div class="spinner"></div></div>
+        </div>
+        
+        <!-- Full List -->
+        <div class="leaderboard-list">
+          <div class="leaderboard-header">
+            <div>Rank</div>
+            <div>Student</div>
+            <div>Badges</div>
+            <div>Points</div>
+          </div>
+          <div id="leaderboard-list">
+            <div class="loading-state" style="padding: 2rem; text-align: center;">
+              <div class="spinner" style="margin: 0 auto;"></div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Your Rank -->
+        <div class="your-rank" id="your-rank" style="display: none;">
+          <p class="text-muted">Your rank:</p>
+          <p class="text-2xl font-bold" id="current-rank"></p>
+        </div>
+      </div>
+    </div>
+  </main>
+  
+  <script src="../../js/config.js"></script>
+  <script src="../../js/api.js"></script>
+  <script src="../../js/auth.js"></script>
+  <script src="../../js/utils.js"></script>
+  <script>
+    if (!Auth.requireAuth()) {
+      throw new Error('Unauthorized');
+    }
+    
+    const currentUserId = Auth.getUser()?.id;
+    
+    async function loadLeaderboard() {
+      const podium = document.getElementById('podium');
+      const list = document.getElementById('leaderboard-list');
+      
+      try {
+        const data = await API.getLeaderboard();
+        const leaderboard = data.leaderboard || [];
+        
+        // Render podium (top 3)
+        if (leaderboard.length >= 3) {
+          const medals = ['🥇', '🥈', '🥉'];
+          const classes = ['gold', 'silver', 'bronze'];
+          podium.innerHTML = leaderboard.slice(0, 3).map((user, i) => `
+            <div class="podium-item ${classes[i]}">
+              <div class="podium-medal">${medals[i]}</div>
+              <div class="podium-name">${Utils.escapeHtml(user.name)}</div>
+              <div class="podium-department">${Utils.escapeHtml(user.department || 'N/A')}</div>
+              <div class="podium-points">${user.total_points} pts</div>
+            </div>
+          `).join('');
+        } else {
+          podium.innerHTML = '<p class="text-muted">Not enough data for podium</p>';
+        }
+        
+        // Render list (all)
+        if (leaderboard.length === 0) {
+          list.innerHTML = '<p class="text-center text-muted" style="padding: 2rem;">No leaderboard data yet. Start earning points!</p>';
+          return;
+        }
+        
+        list.innerHTML = leaderboard.map(user => `
+          <div class="leaderboard-item ${user.user_id === currentUserId ? 'current-user' : ''}">
+            <div class="rank ${user.rank <= 3 ? 'rank-' + user.rank : ''}">#${user.rank}</div>
+            <div class="user-info">
+              <span class="user-name">${Utils.escapeHtml(user.name)}</span>
+              <span class="user-dept">${Utils.escapeHtml(user.department || 'N/A')}</span>
+            </div>
+            <div class="badge-count">🏅 ${user.badge_count} badge${user.badge_count !== 1 ? 's' : ''}</div>
+            <div class="points-display">${user.total_points}</div>
+          </div>
+        `).join('');
+        
+        // Show current user rank if not in list
+        if (data.current_user_rank) {
+          document.getElementById('your-rank').style.display = 'block';
+          document.getElementById('current-rank').textContent = `#${data.current_user_rank}`;
+        }
+        
+      } catch (error) {
+        console.error('Error loading leaderboard:', error);
+        list.innerHTML = `<p class="text-center text-danger" style="padding: 2rem;">Failed to load leaderboard</p>`;
+        podium.innerHTML = '';
+      }
+    }
+    
+    // Init
+    loadLeaderboard();
+  </script>
+</body>
+</html>

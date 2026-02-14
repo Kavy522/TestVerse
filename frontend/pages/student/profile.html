@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="My Profile - University Exam Portal">
+  <title>My Profile - University Exam Portal</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../css/styles.css">
+  <link rel="stylesheet" href="../../css/pages/student/profile.css">
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="container">
+      <div class="navbar-content">
+        <a href="../../index.html" class="navbar-brand">
+          <div class="navbar-logo">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+            </svg>
+          </div>
+          Exam Portal
+        </a>
+        
+        <div class="navbar-menu">
+          <a href="dashboard.html" class="navbar-link">Dashboard</a>
+          <a href="results.html" class="navbar-link">My Results</a>
+          <a href="profile.html" class="navbar-link active">Profile</a>
+        </div>
+        
+        <div class="navbar-user">
+          <span class="badge badge-secondary" id="branch-badge">Loading...</span>
+          <button class="btn btn-ghost btn-sm" onclick="Auth.logout()">Logout</button>
+        </div>
+      </div>
+    </div>
+  </nav>
+  
+  <main class="main-content">
+    <div class="container">
+      <div class="page-header animate-fadeInUp">
+        <div>
+          <h1 class="text-3xl font-bold">My Profile</h1>
+          <p class="text-muted">Manage your account settings and preferences</p>
+        </div>
+      </div>
+      
+      <div class="profile-container animate-fadeInUp">
+        <!-- Profile Card -->
+        <div class="profile-card">
+          <div class="profile-avatar-large" id="profile-avatar">?</div>
+          <div class="profile-name" id="profile-name">Loading...</div>
+          <div class="profile-email" id="profile-email">-</div>
+          
+          <div class="profile-info">
+            <div class="profile-info-item">
+              <span class="profile-info-label">Role</span>
+              <span class="profile-info-value badge badge-primary">Student</span>
+            </div>
+            <div class="profile-info-item">
+              <span class="profile-info-label">Branch</span>
+              <span class="profile-info-value" id="profile-branch">-</span>
+            </div>
+            <div class="profile-info-item">
+              <span class="profile-info-label">Enrollment ID</span>
+              <span class="profile-info-value" id="profile-enrollment">-</span>
+            </div>
+            <div class="profile-info-item">
+              <span class="profile-info-label">Joined</span>
+              <span class="profile-info-value" id="profile-joined">-</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Settings Panel -->
+        <div class="settings-panel">
+          <div class="profile-tabs">
+            <button class="profile-tab active" onclick="switchTab('personal')">Personal Info</button>
+            <button class="profile-tab" onclick="switchTab('password')">Change Password</button>
+          </div>
+          
+          <!-- Personal Info Tab -->
+          <div class="tab-content active" id="tab-personal">
+            <div class="settings-body">
+              <div id="personal-message"></div>
+              
+              <form id="personal-form">
+                <div class="form-group">
+                  <label class="form-label" for="edit-name">Full Name *</label>
+                  <input type="text" class="form-input" id="edit-name" required>
+                </div>
+                
+                <div class="form-group">
+                  <label class="form-label" for="edit-email">Email</label>
+                  <input type="email" class="form-input" id="edit-email" disabled>
+                  <span class="text-sm text-muted">Email cannot be changed</span>
+                </div>
+                
+                <div class="form-group">
+                  <label class="form-label" for="edit-enrollment">Enrollment ID</label>
+                  <input type="text" class="form-input" id="edit-enrollment" placeholder="Enter your enrollment ID">
+                </div>
+                
+                <div class="form-group">
+                  <label class="form-label" for="edit-branch">Branch/Department</label>
+                  <input type="text" class="form-input" id="edit-branch" disabled>
+                  <span class="text-sm text-muted">Branch is assigned by staff</span>
+                </div>
+                
+                <div class="form-actions">
+                  <button type="submit" class="btn btn-primary" id="save-personal-btn">
+                    Save Changes
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+          
+          <!-- Change Password Tab -->
+          <div class="tab-content" id="tab-password">
+            <div class="settings-body">
+              <div id="password-message"></div>
+              
+              <form id="password-form">
+                <div class="form-group">
+                  <label class="form-label" for="old-password">Current Password *</label>
+                  <input type="password" class="form-input" id="old-password" required>
+                </div>
+                
+                <div class="form-group">
+                  <label class="form-label" for="new-password">New Password *</label>
+                  <input type="password" class="form-input" id="new-password" required minlength="6">
+                  <span class="text-sm text-muted">Minimum 6 characters</span>
+                </div>
+                
+                <div class="form-group">
+                  <label class="form-label" for="confirm-password">Confirm New Password *</label>
+                  <input type="password" class="form-input" id="confirm-password" required>
+                </div>
+                
+                <div class="form-actions">
+                  <button type="submit" class="btn btn-primary" id="change-password-btn">
+                    Change Password
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  
+  <script src="../../js/config.js"></script>
+  <script src="../../js/api.js"></script>
+  <script src="../../js/auth.js"></script>
+  <script src="../../js/utils.js"></script>
+  <script>
+    if (!Auth.requireAuth()) {
+      throw new Error('Unauthorized');
+    }
+    
+    let currentUser = null;
+    
+    // Switch tabs
+    function switchTab(tabName) {
+      document.querySelectorAll('.profile-tab').forEach(tab => tab.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+      
+      document.querySelector(`[onclick="switchTab('${tabName}')"]`).classList.add('active');
+      document.getElementById(`tab-${tabName}`).classList.add('active');
+    }
+    
+    // Load profile data
+    async function loadProfile() {
+      try {
+        const user = await API.getProfile();
+        currentUser = user;
+        
+        // Update profile card
+        document.getElementById('profile-avatar').textContent = user.name ? user.name[0].toUpperCase() : '?';
+        document.getElementById('profile-name').textContent = user.name || 'No Name';
+        document.getElementById('profile-email').textContent = user.email;
+        document.getElementById('profile-branch').textContent = user.department || 'Not Assigned';
+        document.getElementById('profile-enrollment').textContent = user.enrollment_id || 'Not Set';
+        document.getElementById('profile-joined').textContent = Utils.formatDate(user.created_at, { hour: undefined, minute: undefined });
+        
+        // Update navbar badge
+        document.getElementById('branch-badge').textContent = user.department || 'Unassigned';
+        
+        // Populate edit form
+        document.getElementById('edit-name').value = user.name || '';
+        document.getElementById('edit-email').value = user.email || '';
+        document.getElementById('edit-enrollment').value = user.enrollment_id || '';
+        document.getElementById('edit-branch').value = user.department || 'Not Assigned';
+        
+      } catch (error) {
+        console.error('Error loading profile:', error);
+        Utils.showToast('Failed to load profile', 'error');
+      }
+    }
+    
+    // Show message
+    function showMessage(containerId, message, isError = false) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = `
+        <div class="${isError ? 'message-error' : 'message-success'}">
+          ${Utils.escapeHtml(message)}
+        </div>
+      `;
+      setTimeout(() => container.innerHTML = '', 5000);
+    }
+    
+    // Handle personal info form
+    document.getElementById('personal-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const btn = document.getElementById('save-personal-btn');
+      Utils.setButtonLoading(btn, true);
+      
+      try {
+        const data = {
+          name: document.getElementById('edit-name').value.trim(),
+          enrollment_id: document.getElementById('edit-enrollment').value.trim() || null
+        };
+        
+        await API.updateProfile(data);
+        showMessage('personal-message', 'Profile updated successfully!');
+        loadProfile();
+        
+      } catch (error) {
+        console.error('Error updating profile:', error);
+        showMessage('personal-message', error.message || 'Failed to update profile', true);
+      } finally {
+        Utils.setButtonLoading(btn, false);
+      }
+    });
+    
+    // Handle password form
+    document.getElementById('password-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const oldPassword = document.getElementById('old-password').value;
+      const newPassword = document.getElementById('new-password').value;
+      const confirmPassword = document.getElementById('confirm-password').value;
+      
+      if (newPassword !== confirmPassword) {
+        showMessage('password-message', 'New passwords do not match', true);
+        return;
+      }
+      
+      if (newPassword.length < 6) {
+        showMessage('password-message', 'Password must be at least 6 characters', true);
+        return;
+      }
+      
+      const btn = document.getElementById('change-password-btn');
+      Utils.setButtonLoading(btn, true);
+      
+      try {
+        await API.changePassword({
+          old_password: oldPassword,
+          new_password: newPassword,
+          confirm_password: confirmPassword
+        });
+        
+        showMessage('password-message', 'Password changed successfully!');
+        document.getElementById('password-form').reset();
+        
+      } catch (error) {
+        console.error('Error changing password:', error);
+        showMessage('password-message', error.message || error.error || 'Failed to change password', true);
+      } finally {
+        Utils.setButtonLoading(btn, false);
+      }
+    });
+    
+    // Init
+    loadProfile();
+  </script>
+</body>
+</html>
