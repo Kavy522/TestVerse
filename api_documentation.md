@@ -643,7 +643,7 @@ POST /api/exams/:exam_id/attempt/final-submit
 
 ---
 
-### Results Management
+### Results Management!
 
 #### Get Exam Results (Staff)
 ```
