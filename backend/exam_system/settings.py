@@ -84,15 +84,18 @@ WSGI_APPLICATION = 'exam_system.wsgi.application'
 import os
 from decouple import config
 
-# Database - Supabase PostgreSQL for Production
+# Database - Render PostgreSQL for Production
 import dj_database_url
 
 if config('DATABASE_URL', default=None):
-    # Production - Supabase PostgreSQL
+    # Production - Render PostgreSQL
     DATABASES = {
         'default': dj_database_url.parse(config('DATABASE_URL'))
     }
-    DATABASES['default']['OPTIONS'] = {'sslmode': 'require'}
+    # Ensure SSL is required for Render
+    DATABASES['default']['OPTIONS'] = {
+        'sslmode': 'require',
+    }
 else:
     # Development fallback - SQLite
     DATABASES = {

@@ -3,7 +3,7 @@
 // Redirect if already logged in
 Auth.redirectIfLoggedIn();
 
-// Back to home button functionality
+// Back to home
 function goToHome(event) {
   if (event) {
     event.preventDefault();
@@ -33,23 +33,18 @@ async function handleLogin() {
   const loginBtn = document.getElementById('login-btn');
   const errorDiv = document.getElementById('error-message');
   
-  // Hide previous error
   errorDiv.style.display = 'none';
   
-  // Validate
   if (!email || !password) {
     showError('Please fill in all fields');
     return;
   }
   
-  // Show loading
   loginBtn.disabled = true;
   loginBtn.textContent = 'Signing in...';
   
   try {
     await Auth.login(email, password);
-    
-    // Success - redirect
     errorDiv.style.display = 'none';
     loginBtn.textContent = 'Success!';
     
@@ -58,29 +53,21 @@ async function handleLogin() {
     }, 500);
     
   } catch (error) {
-    // Show error message
     showError(error.message || 'Invalid email or password. Please try again.');
-    
-    // Clear password field
     document.getElementById('password').value = '';
-    
-    // Focus password field
     document.getElementById('password').focus();
-    
-    // Reset button
     loginBtn.disabled = false;
     loginBtn.textContent = 'Sign In';
   }
 }
 
-// Show error message
 function showError(message) {
   const errorDiv = document.getElementById('error-message');
   errorDiv.textContent = message;
   errorDiv.style.display = 'block';
 }
 
-// Allow Enter key to submit
+// Enter key handlers
 document.getElementById('password').addEventListener('keypress', (e) => {
   if (e.key === 'Enter') {
     e.preventDefault();

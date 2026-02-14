@@ -31,38 +31,38 @@ const CONFIG = {
     MAX_PAGE_SIZE: 100 
   },
   
-  // Compute base URL once at startup (prevents reload loops)
-  // Works with Live Server (/frontend/), direct file serving, or any hosting setup
+  // Compute base URL once at startup
   BASE_URL: (() => {
     const path = window.location.pathname;
-    // Find the frontend folder in the path
     const frontendIndex = path.indexOf('/frontend/');
+    
     if (frontendIndex !== -1) {
       return path.substring(0, frontendIndex) + '/frontend';
     }
-    // Fallback for when not using /frontend/ path
-    // Check if we're already at the root
+    
     if (path === '/' || path === '/index.html') {
       return '';
     }
-    // If we're in /pages/staff/ or /pages/student/, go up two levels
+    
     if (path.includes('/pages/staff/') || path.includes('/pages/student/')) {
       return '../..';
     }
-    // If we're in /pages/, go up one level
+    
     if (path.includes('/pages/')) {
       return '..';
     }
+    
     return '';
   })(),
   
-  // Frontend routes - use absolute paths to avoid infinite redirects
+  // Frontend routes
   get ROUTES() {
     const joinPath = (p) => {
       const base = this.BASE_URL || '';
       if (!base) return p.replace(/^\.\//, '');
       return base.replace(/\/$/, '') + '/' + p.replace(/^\//, '').replace(/^\.\//, '');
     };
+    
     return {
       HOME: joinPath('index.html'),
       LOGIN: joinPath('pages/login.html'),
@@ -74,7 +74,7 @@ const CONFIG = {
     };
   },
   
-  // API Endpoints (matching OpenAPI spec)
+  // API Endpoints
   ENDPOINTS: {
     // Auth
     LOGIN: '/auth/login/',
@@ -145,7 +145,7 @@ const CONFIG = {
     STAFF_STUDENT_DETAIL: (id) => `/auth/staff/students/${id}/`
   },
   
-  // Available departments/branches
+  // Available departments
   DEPARTMENTS: [
     { value: 'CSE', label: 'Computer Science & Engineering' },
     { value: 'ECE', label: 'Electronics & Communication' },
@@ -155,7 +155,7 @@ const CONFIG = {
     { value: 'IT', label: 'Information Technology' }
   ],
   
-  // CORS Configuration for local development
+  // CORS Configuration
   CORS_CONFIG: {
     origin: 'http://127.0.0.1:3000',
     credentials: true

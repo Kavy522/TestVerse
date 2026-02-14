@@ -1,5 +1,5 @@
 from rest_framework import viewsets, status, generics, permissions, filters
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from django_filters.rest_framework import DjangoFilterBackend
@@ -29,6 +29,18 @@ class StandardResultsSetPagination(PageNumberPagination):
     page_size = 10
     page_size_query_param = 'page_size'
     max_page_size = 100
+
+
+# ============ HEALTH CHECK VIEW ============
+
+@api_view(['GET'])
+def health_check(request):
+    """Health check endpoint for Render deployment"""
+    return Response({
+        'status': 'healthy',
+        'message': 'TestVerse backend is running successfully!',
+        'timestamp': timezone.now()
+    })
 
 
 # ============ STUDENT VIEWS ============

@@ -14,11 +14,11 @@ let questions = [];
 let answers = {};
 let currentQuestionIndex = 0;
 let timeRemaining = 0;
-let examEndTime = null; // Absolute end time from server (same for all students)
+let examEndTime = null;
 let timerInterval = null;
 let autoSaveInterval = null;
 
-// Initialize exam with error handling
+// Initialize exam
 async function initExam() {
   if (!examId || examId === 'null' || examId === 'undefined') {
     Utils.showToast('Invalid exam ID', 'error');
@@ -48,7 +48,6 @@ async function initExam() {
     // Start or get attempt
     attemptData = await API.startExamAttempt(examId);
     
-    // Validate response structure
     if (!attemptData) {
       throw new Error('Invalid response from server');
     }
@@ -56,7 +55,6 @@ async function initExam() {
     questions = Array.isArray(attemptData.questions) ? attemptData.questions : [];
     timeRemaining = typeof attemptData.time_remaining_seconds === 'number' ? attemptData.time_remaining_seconds : 0;
     
-    // Validate that we have questions
     if (questions.length === 0) {
       throw new Error('No questions found for this exam');
     }
@@ -69,7 +67,7 @@ async function initExam() {
       questions = questions.filter((q, index) => questionIds.indexOf(q.id) === index);
     }
     
-    // Store the absolute exam end time from server (same for all students)
+    // Store the absolute exam end time from server
     if (attemptData.endTime) {
       examEndTime = new Date(attemptData.endTime);
     }
@@ -79,60 +77,42 @@ async function initExam() {
       document.getElementById('total-count').textContent = questions.length;
     }
     
-    // Initialize answers from saved data (handles resume with saved answers)
+    // Initialize answers from saved data
     if (questions.length > 0) {
       questions.forEach(q => {
-      if (q.type === 'coding') {
-        if (q.student_code) answers[q.id] = q.student_code;
-      } else if (q.student_answer !== null && q.student_answer !== undefined) {
-        // For MCQ questions, student_answer might contain the option text
-        // We need to find the corresponding option ID
-        if (q.type === 'mcq' || q.type === 'multiple_mcq') {
-          // If student_answer is already an option ID (number), use it directly
-          if (typeof q.student_answer === 'number') {
-            answers[q.id] = q.student_answer;
-          } 
-          // If student_answer is a string that matches an option ID, convert to number
-          else if (typeof q.student_answer === 'string' && !isNaN(q.student_answer)) {
-            const optionId = parseInt(q.student_answer);
-            // Verify this ID exists in options
-            if (q.options && q.options.some(opt => opt.id === optionId)) {
-              answers[q.id] = optionId;
-            } else {
-              // If not found, it might be the option text - find matching option
-              const matchingOption = q.options.find(opt => opt.text === q.student_answer);
-              if (matchingOption) {
-                answers[q.id] = matchingOption.id;
+        if (q.type === 'coding') {
+          if (q.student_code) answers[q.id] = q.student_code;
+        } else if (q.student_answer !== null && q.student_answer !== undefined) {
+          if (q.type === 'mcq' || q.type === 'multiple_mcq') {
+            if (typeof q.student_answer === 'number') {
+              answers[q.id] = q.student_answer;
+            } else if (typeof q.student_answer === 'string' && !isNaN(q.student_answer)) {
+              const optionId = parseInt(q.student_answer);
+              if (q.options && q.options.some(opt => opt.id === optionId)) {
+                answers[q.id] = optionId;
               } else {
-                answers[q.id] = q.student_answer; // fallback
+                const matchingOption = q.options.find(opt => opt.text === q.student_answer);
+                answers[q.id] = matchingOption ? matchingOption.id : q.student_answer;
               }
-            }
-          }
-          // If student_answer is the option text, find the matching option ID
-          else {
-            const matchingOption = q.options.find(opt => opt.text === q.student_answer);
-            if (matchingOption) {
-              answers[q.id] = matchingOption.id;
             } else {
-              answers[q.id] = q.student_answer; // fallback
+              const matchingOption = q.options.find(opt => opt.text === q.student_answer);
+              answers[q.id] = matchingOption ? matchingOption.id : q.student_answer;
             }
+          } else {
+            answers[q.id] = q.student_answer;
           }
-        } else {
-          answers[q.id] = q.student_answer;
         }
       });
     }
-  }
         
     // Initialize security
     if (questions.length > 0) {
       ExamSecurity.init(examId);
     }
     
-    // Start timer
+    // Start timer and auto-save
     if (questions.length > 0) {
       startTimer();
-      // Start auto-save
       startAutoSave();
     }
     
@@ -141,9 +121,6 @@ async function initExam() {
       renderQuestionNav();
       renderQuestion();
       updateAnsweredCount();
-    }
-    
-    if (questions.length > 0) {
       document.getElementById('question-actions').style.display = 'flex';
     }
     
@@ -174,12 +151,11 @@ async function initExam() {
   }
 }
 
-// Timer - uses server-provided remaining time, syncs with exam end time
+// Timer
 function startTimer() {
   updateTimerDisplay();
   
   timerInterval = setInterval(() => {
-    // If we have an absolute end time, recalculate from it to avoid drift
     if (examEndTime) {
       const now = new Date();
       timeRemaining = Math.max(0, Math.floor((examEndTime - now) / 1000));
@@ -197,12 +173,11 @@ function startTimer() {
 }
 
 function updateTimerDisplay() {
-  if (questions.length === 0) return; // Prevent timer update if no questions loaded
+  if (questions.length === 0) return;
   
   const timerEl = document.getElementById('timer');
   const display = document.getElementById('timer-display');
   
-  // Ensure time remaining is never negative
   const displayTime = Math.max(0, timeRemaining);
   display.textContent = Utils.formatTime(displayTime);
   
@@ -217,20 +192,15 @@ function updateTimerDisplay() {
 
 // Auto-save
 function startAutoSave() {
-  if (questions.length === 0) return; // Prevent auto-save if no questions loaded
+  if (questions.length === 0) return;
   autoSaveInterval = setInterval(saveCurrentAnswer, CONFIG.AUTO_SAVE_INTERVAL);
 }
 
 async function saveCurrentAnswer() {
-  if (questions.length === 0) return; // Prevent save if no questions loaded
+  if (questions.length === 0) return;
   
   const question = questions[currentQuestionIndex];
-  if (!question) return;
-  
-  // Don't save if no answer provided
-  if (!answers[question.id]) {
-    return;
-  }
+  if (!question || !answers[question.id]) return;
   
   const indicator = document.getElementById('auto-save-status');
   if (!indicator) return;
@@ -239,7 +209,6 @@ async function saveCurrentAnswer() {
   indicator.querySelector('span').textContent = 'Saving...';
   
   try {
-    // For coding questions, pass code separately per OpenAPI AnswerSave schema
     if (question.type === 'coding') {
       await API.saveAnswer(examId, question.id, null, answers[question.id]);
     } else {
@@ -248,7 +217,6 @@ async function saveCurrentAnswer() {
     indicator.className = 'auto-save-indicator saved';
     indicator.querySelector('span').textContent = 'Saved';
     
-    // Reset after 2 seconds
     setTimeout(() => {
       if (indicator) {
         indicator.className = 'auto-save-indicator';
@@ -263,16 +231,15 @@ async function saveCurrentAnswer() {
 }
 
 function renderQuestion() {
-  if (questions.length === 0) return; // Prevent render if no questions loaded
+  if (questions.length === 0) return;
   
   const question = questions[currentQuestionIndex];
   if (!question) return;
   
-  // Clean up any existing Monaco editors
+  // Clean up existing Monaco editors
   const existingEditorElements = document.querySelectorAll('[id^="monaco-editor-"]');
   existingEditorElements.forEach(element => {
     if (element.editorInstance) {
-      // Dispose of change listener subscription if it exists
       if (element.subscription && typeof element.subscription.dispose === 'function') {
         element.subscription.dispose();
       }
@@ -284,7 +251,7 @@ function renderQuestion() {
   
   const container = document.getElementById('question-container');
   
-  // Question type label and badge class
+  // Question type configuration
   const typeLabels = {
     'mcq': 'Multiple Choice',
     'multiple_mcq': 'Multiple Select',
@@ -383,79 +350,19 @@ function renderQuestion() {
     </div>
   `;
   
-  // Event listeners - prevent duplicates by removing old ones first
+  // Event listeners
   if (question.type === 'mcq' || question.type === 'multiple_mcq') {
     const options = container.querySelectorAll('.option-item');
     options.forEach(opt => {
-      // Remove existing event listeners
       const clone = opt.cloneNode(true);
       opt.parentNode.replaceChild(clone, opt);
       clone.addEventListener('click', () => selectOption(clone.dataset.optionId));
     });
   } else if (question.type === 'coding') {
-    // Initialize Monaco Editor for coding questions
-    const editorElement = document.getElementById(`monaco-editor-${question.id}`);
-    if (editorElement && !editorElement.editorInstance) {
-      // Map language to Monaco's language IDs
-      const languageMap = {
-        'python': 'python',
-        'java': 'java',
-        'javascript': 'javascript',
-        'js': 'javascript',
-        'cpp': 'cpp',
-        'c++': 'cpp',
-        'c': 'c',
-        'typescript': 'typescript',
-        'ts': 'typescript',
-        'html': 'html',
-        'css': 'css',
-        'sql': 'sql'
-      };
-      const language = languageMap[(question.coding_language || 'python').toLowerCase()] || 'python';
-      
-      // Ensure element is in DOM and visible before initializing
-      let retryCount = 0;
-      const maxRetries = 20; // Maximum 1 second wait time
-      
-      const initializeEditor = () => {
-        if (!editorElement.offsetParent) {
-          retryCount++;
-          if (retryCount >= maxRetries) {
-            console.error('Monaco editor element not visible after retries, using fallback');
-            createFallbackEditor(editorElement, question);
-            return;
-          }
-          // Element not visible yet, wait and retry
-          setTimeout(initializeEditor, 50);
-          return;
-        }
-        
-        initializeMonacoEditor(editorElement, language, answers[question.id] || '')
-          .then(editor => {
-            editorElement.editorInstance = editor;
-            
-            // Listen for changes
-            const subscription = editorElement.editorInstance.onDidChangeModelContent(() => {
-              answers[question.id] = editorElement.editorInstance.getValue();
-              updateAnsweredCount();
-            });
-            
-            // Store subscription for cleanup
-            editorElement.subscription = subscription;
-          })
-          .catch(error => {
-            console.error('Failed to initialize Monaco Editor:', error);
-            createFallbackEditor(editorElement, question);
-          });
-      };
-      
-      // Start initialization process
-      initializeEditor();
-    }
+    initializeCodingEditor(question);
   } else {
     const input = document.getElementById('answer-input');
     if (input) {
-      // Remove existing event listeners by cloning
       const newInput = input.cloneNode(true);
       input.parentNode.replaceChild(newInput, input);
       newInput.addEventListener('input', handleAnswerInput);
@@ -484,9 +391,60 @@ function renderQuestion() {
   updateQuestionNav();
 }
 
-// Helper function to create fallback editor
+function initializeCodingEditor(question) {
+  const editorElement = document.getElementById(`monaco-editor-${question.id}`);
+  if (editorElement && !editorElement.editorInstance) {
+    const languageMap = {
+      'python': 'python',
+      'java': 'java',
+      'javascript': 'javascript',
+      'js': 'javascript',
+      'cpp': 'cpp',
+      'c++': 'cpp',
+      'c': 'c',
+      'typescript': 'typescript',
+      'ts': 'typescript',
+      'html': 'html',
+      'css': 'css',
+      'sql': 'sql'
+    };
+    const language = languageMap[(question.coding_language || 'python').toLowerCase()] || 'python';
+    
+    let retryCount = 0;
+    const maxRetries = 20;
+    
+    const initializeEditor = () => {
+      if (!editorElement.offsetParent) {
+        retryCount++;
+        if (retryCount >= maxRetries) {
+          console.error('Monaco editor element not visible after retries, using fallback');
+          createFallbackEditor(editorElement, question);
+          return;
+        }
+        setTimeout(initializeEditor, 50);
+        return;
+      }
+      
+      initializeMonacoEditor(editorElement, language, answers[question.id] || '')
+        .then(editor => {
+          editorElement.editorInstance = editor;
+          const subscription = editorElement.editorInstance.onDidChangeModelContent(() => {
+            answers[question.id] = editorElement.editorInstance.getValue();
+            updateAnsweredCount();
+          });
+          editorElement.subscription = subscription;
+        })
+        .catch(error => {
+          console.error('Failed to initialize Monaco Editor:', error);
+          createFallbackEditor(editorElement, question);
+        });
+    };
+    
+    initializeEditor();
+  }
+}
+
 function createFallbackEditor(editorElement, question) {
-  // Fallback to textarea if Monaco fails to load
   const fallbackContainer = document.createElement('div');
   fallbackContainer.className = 'code-question-wrapper';
   
@@ -524,15 +482,13 @@ function createFallbackEditor(editorElement, question) {
   });
 }
 
-// Event handler functions for proper cleanup
 function handleAnswerInput(e) {
-  if (questions.length === 0) return; // Prevent answer input if no questions loaded
+  if (questions.length === 0) return;
   
   const question = questions[currentQuestionIndex];
   if (question) {
     answers[question.id] = e.target.value;
     updateAnsweredCount();
-    // Update character count for descriptive questions
     const charCount = document.getElementById('char-count');
     if (charCount) {
       charCount.textContent = `${e.target.value.length} characters`;
@@ -540,20 +496,14 @@ function handleAnswerInput(e) {
   }
 }
 
-function handleOptionClick(optionId) {
-  if (questions.length === 0) return; // Prevent option click if no questions loaded
-  selectOption(optionId);
-}
-
 function selectOption(optionId) {
-  if (questions.length === 0) return; // Prevent option selection if no questions loaded
+  if (questions.length === 0) return;
   
   const question = questions[currentQuestionIndex];
   if (!question) return;
   
   answers[question.id] = optionId;
   
-  // Update UI
   document.querySelectorAll('.option-item').forEach(opt => {
     opt.classList.toggle('selected', opt.dataset.optionId === optionId);
   });
@@ -564,7 +514,7 @@ function selectOption(optionId) {
 
 // Question navigation
 function renderQuestionNav() {
-  if (questions.length === 0) return; // Prevent nav render if no questions loaded
+  if (questions.length === 0) return;
   
   const nav = document.getElementById('question-nav');
   nav.innerHTML = questions.map((q, i) => `
@@ -575,7 +525,7 @@ function renderQuestionNav() {
   
   nav.querySelectorAll('.nav-item').forEach(btn => {
     btn.addEventListener('click', () => {
-      if (questions.length === 0) return; // Prevent navigation if no questions loaded
+      if (questions.length === 0) return;
       saveCurrentAnswer();
       currentQuestionIndex = parseInt(btn.dataset.index);
       renderQuestion();
@@ -584,7 +534,7 @@ function renderQuestionNav() {
 }
 
 function updateQuestionNav() {
-  if (questions.length === 0) return; // Prevent nav update if no questions loaded
+  if (questions.length === 0) return;
   
   document.querySelectorAll('.nav-item').forEach((btn, i) => {
     const q = questions[i];
@@ -593,7 +543,7 @@ function updateQuestionNav() {
 }
 
 function updateAnsweredCount() {
-  if (questions.length === 0) return; // Prevent count update if no questions loaded
+  if (questions.length === 0) return;
   
   const count = Object.keys(answers).filter(k => answers[k]).length;
   document.getElementById('answered-count').textContent = count;
@@ -616,7 +566,6 @@ document.getElementById('next-btn').addEventListener('click', () => {
     renderQuestion();
     updateQuestionNav();
   } else if (questions.length > 0) {
-    // If it's the last question, also trigger submit
     const answered = Object.keys(answers).filter(k => answers[k]).length;
     const unanswered = questions.length - answered;
     
@@ -631,7 +580,7 @@ document.getElementById('next-btn').addEventListener('click', () => {
 
 // Submit
 document.getElementById('submit-btn').addEventListener('click', () => {
-  if (questions.length === 0) return; // Prevent submit if no questions loaded
+  if (questions.length === 0) return;
   
   const answered = Object.keys(answers).filter(k => answers[k]).length;
   const unanswered = questions.length - answered;
@@ -647,15 +596,8 @@ document.getElementById('submit-btn').addEventListener('click', () => {
 let isSubmitting = false;
 let hasSubmitted = false;
 
-/**
- * Save all unsaved answers to the backend before submitting.
- * Silently catches errors so submit is not blocked.
- * Suppresses error toasts to avoid confusing the student during submit.
- */
 async function saveAllAnswers() {
   const savePromises = [];
-  
-  // Suppress error toasts during bulk save (would be confusing during submit)
   API._suppressToasts = true;
   
   for (const question of questions) {
@@ -673,19 +615,17 @@ async function saveAllAnswers() {
     }
   }
   
-  // Wait for all saves, but don't fail if some error out
   try {
     await Promise.allSettled(savePromises);
   } catch (e) {
     console.warn('Some answers failed to save:', e);
   } finally {
-    // Restore toast behavior for the actual submit call
     API._suppressToasts = false;
   }
 }
 
 async function submitExam() {
-  if (isSubmitting || hasSubmitted) return; // Prevent double submission
+  if (isSubmitting || hasSubmitted) return;
   isSubmitting = true;
   hasSubmitted = true;
   
@@ -693,14 +633,13 @@ async function submitExam() {
     clearInterval(timerInterval);
     clearInterval(autoSaveInterval);
     
-    // Show loading state immediately
     const submitBtn = document.getElementById('submit-btn');
     if (submitBtn) {
       submitBtn.disabled = true;
       submitBtn.textContent = 'Submitting...';
     }
     
-    // Capture current Monaco editor value before disposing
+    // Capture current Monaco editor value
     const question = questions[currentQuestionIndex];
     if (question && question.type === 'coding') {
       const editorElement = document.getElementById(`monaco-editor-${question.id}`);
@@ -713,7 +652,6 @@ async function submitExam() {
     const existingEditorElements = document.querySelectorAll('[id^="monaco-editor-"]');
     existingEditorElements.forEach(element => {
       if (element.editorInstance) {
-        // Dispose of change listener subscription if it exists
         if (element.subscription && typeof element.subscription.dispose === 'function') {
           element.subscription.dispose();
         }
@@ -725,13 +663,9 @@ async function submitExam() {
     
     ExamSecurity.destroy();
     
-    // Save ALL answers before submitting (silently — no error toasts)
     await saveAllAnswers();
-    
-    // Remove beforeunload handler so redirect works
     window.onbeforeunload = null;
     
-    // Submit the exam
     const response = await API.submitExam(examId);
     Utils.showToast(response.message || 'Exam submitted successfully!', 'success');
     
@@ -741,7 +675,6 @@ async function submitExam() {
   } catch (error) {
     console.error('Submit error:', error);
     
-    // Retry once automatically (handles race conditions with Celery auto-submit)
     try {
       const retryResponse = await API.submitExam(examId);
       Utils.showToast(retryResponse.message || 'Exam submitted successfully!', 'success');
@@ -755,7 +688,7 @@ async function submitExam() {
     }
     
     isSubmitting = false;
-    hasSubmitted = false; // Allow retry if submission failed
+    hasSubmitted = false;
     Utils.showToast(error.message || 'Failed to submit exam. Please try again.', 'error');
     
     const submitBtn = document.getElementById('submit-btn');
@@ -764,7 +697,6 @@ async function submitExam() {
       submitBtn.textContent = 'Submit Exam';
     }
     
-    // Restart timer and auto-save so student can try again
     startTimer();
     startAutoSave();
   }
@@ -774,7 +706,6 @@ function autoSubmit() {
   clearInterval(timerInterval);
   clearInterval(autoSaveInterval);
   
-  // Capture current Monaco editor value before disposing
   const question = questions[currentQuestionIndex];
   if (question && question.type === 'coding') {
     const editorElement = document.getElementById(`monaco-editor-${question.id}`);
@@ -783,11 +714,9 @@ function autoSubmit() {
     }
   }
   
-  // Clean up Monaco editors before submitting
   const existingEditorElements = document.querySelectorAll('[id^="monaco-editor-"]');
   existingEditorElements.forEach(element => {
     if (element.editorInstance) {
-      // Dispose of change listener subscription if it exists
       if (element.subscription && typeof element.subscription.dispose === 'function') {
         element.subscription.dispose();
       }
@@ -799,14 +728,11 @@ function autoSubmit() {
   
   Utils.showToast('Time is up! Auto-submitting your exam...', 'warning');
   
-  // Use await pattern with IIFE for proper error handling
   (async () => {
     try {
       await submitExam();
     } catch (e) {
       console.error('Auto-submit failed:', e);
-      // Even if frontend submit fails, backend Celery task will handle it
-      // Force redirect to results page
       Utils.showToast('Auto-submit completed. Redirecting to results...', 'info');
       window.onbeforeunload = null;
       setTimeout(() => {
@@ -824,16 +750,14 @@ window.onbeforeunload = (e) => {
   }
 };
 
-// Clean up resources on page unload
+// Clean up resources
 window.addEventListener('beforeunload', () => {
   if (timerInterval) clearInterval(timerInterval);
   if (autoSaveInterval) clearInterval(autoSaveInterval);
   
-  // Clean up Monaco editors before unloading
   const existingEditorElements = document.querySelectorAll('[id^="monaco-editor-"]');
   existingEditorElements.forEach(element => {
     if (element.editorInstance) {
-      // Dispose of change listener subscription if it exists
       if (element.subscription && typeof element.subscription.dispose === 'function') {
         element.subscription.dispose();
       }

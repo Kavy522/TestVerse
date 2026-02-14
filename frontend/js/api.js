@@ -7,7 +7,6 @@
 const API = {
   // ============ TOKEN MANAGEMENT ============
   
-  // Flag to suppress error toasts (used during bulk saves before submit)
   _suppressToasts: false,
   
   getToken() {
@@ -82,59 +81,78 @@ const API = {
     }
     
     if (!response.ok) {
-      if (response.status === 401) {
-        // Skip redirect logic if we're already on the login page
-        const isOnLoginPage = window.location.pathname.includes('login');
-        
-        if (!isOnLoginPage) {
-          // Try to refresh token
-          const refreshed = await this.tryRefreshToken();
-          if (!refreshed) {
-            this.clearTokens();
-            window.location.href = CONFIG.ROUTES.LOGIN;
-            throw new Error('Session expired. Please login again.');
-          }
-        } else {
-          // On login page - just throw error, don't redirect
-          throw new Error('Invalid email or password');
-        }
-      }
-      
-      // Extract detailed error message from various response formats
-      let errorMessage = 'An error occurred';
-      
-      if (data.detail) {
-        // DRF standard error format
-        errorMessage = data.detail;
-      } else if (data.error) {
-        // Custom error format
-        errorMessage = typeof data.error === 'string' ? data.error : data.error.message || JSON.stringify(data.error);
-      } else if (data.message) {
-        errorMessage = data.message;
-      } else if (data.non_field_errors) {
-        // DRF form validation errors
-        errorMessage = Array.isArray(data.non_field_errors) ? data.non_field_errors.join(', ') : data.non_field_errors;
-      } else if (typeof data === 'object' && Object.keys(data).length > 0) {
-        // Field-specific validation errors - format them nicely
-        const fieldErrors = [];
-        for (const [field, errors] of Object.entries(data)) {
-          const errorText = Array.isArray(errors) ? errors.join(', ') : errors;
-          const fieldName = field.replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase());
-          fieldErrors.push(`${fieldName}: ${errorText}`);
-        }
-        errorMessage = fieldErrors.join('\n');
-      }
-      
-      // Show error in toast notification (unless suppressed during submit flow)
-      if (!this._suppressToasts && typeof Utils !== 'undefined' && Utils.showToast) {
-        Utils.showToast(errorMessage, 'error', 6000);
-      }
-      
-      console.error('API Error:', response.status, errorMessage, data);
-      throw new Error(errorMessage);
+      await this.handleError(response, data);
     }
     
     return data;
+  },
+
+  async handleError(response, data) {
+    if (response.status === 401) {
+      await this.handleAuthError();
+      return;
+    }
+    
+    const errorMessage = this.extractErrorMessage(data);
+    
+    // Show error in toast notification (unless suppressed during submit flow)
+    if (!this._suppressToasts && typeof Utils !== 'undefined' && Utils.showToast) {
+      Utils.showToast(errorMessage, 'error', 6000);
+    }
+    
+    console.error('API Error:', response.status, errorMessage, data);
+    throw new Error(errorMessage);
+  },
+
+  async handleAuthError() {
+    const isOnLoginPage = window.location.pathname.includes('login');
+    
+    if (isOnLoginPage) {
+      // On login page - just throw error, don't redirect
+      throw new Error('Invalid email or password');
+    }
+    
+    // Try to refresh token
+    const refreshed = await this.tryRefreshToken();
+    if (!refreshed) {
+      this.clearTokens();
+      window.location.href = CONFIG.ROUTES.LOGIN;
+      throw new Error('Session expired. Please login again.');
+    }
+  },
+
+  extractErrorMessage(data) {
+    if (data.detail) {
+      // DRF standard error format
+      return data.detail;
+    }
+    
+    if (data.error) {
+      // Custom error format
+      return typeof data.error === 'string' ? data.error : data.error.message || JSON.stringify(data.error);
+    }
+    
+    if (data.message) {
+      return data.message;
+    }
+    
+    if (data.non_field_errors) {
+      // DRF form validation errors
+      return Array.isArray(data.non_field_errors) ? data.non_field_errors.join(', ') : data.non_field_errors;
+    }
+    
+    if (typeof data === 'object' && Object.keys(data).length > 0) {
+      // Field-specific validation errors - format them nicely
+      const fieldErrors = [];
+      for (const [field, errors] of Object.entries(data)) {
+        const errorText = Array.isArray(errors) ? errors.join(', ') : errors;
+        const fieldName = field.replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase());
+        fieldErrors.push(`${fieldName}: ${errorText}`);
+      }
+      return fieldErrors.join('\n');
+    }
+    
+    return 'An error occurred';
   },
 
   async tryRefreshToken() {
@@ -380,6 +398,7 @@ const API = {
   async getExamResult(examId) {
     return await this.get(CONFIG.ENDPOINTS.EXAM_RESULT(examId));
   },
+  
   async getMyResults(params = {}) {
     // Get current student's exam results
     return await this.get('/exams/my-results/', params);
@@ -389,6 +408,7 @@ const API = {
     // Get current student's exam attempts (exams taken)
     return await this.get('/exams/my-attempts/', params);
   },
+  
   // ============ STAFF EXAM MANAGEMENT ============
   
   async getStaffExams(params = {}) {

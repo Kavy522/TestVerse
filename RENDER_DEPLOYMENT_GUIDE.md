@@ -1,118 +1,128 @@
-# 🚀 Render Deployment Guide
+# Render.com Deployment Configuration
 
-## 📋 Pre-deployment Checklist
+## Services to Create
 
-### 1. Environment Variables Setup
-Set these in your Render dashboard:
+### 1. Web Service (Django Backend)
+- **Name**: testverse-backend
+- **Runtime**: Python 3
+- **Build Command**: 
+  ```
+  pip install -r requirements.txt && python manage.py collectstatic --noinput
+  ```
+- **Start Command**: 
+  ```
+  gunicorn exam_system.wsgi:application --bind 0.0.0.0:$PORT
+  ```
+
+### 2. Database (Already created by you)
+- **Name**: testverse-database
+- **Type**: PostgreSQL
+- **Region**: Oregon (us-west1)
+
+## Environment Variables (Set in Render Dashboard)
 
 ```
-DEBUG=False
+DATABASE_URL=postgresql://testverse_database_user:qG5mA1ZAv0ROiweT2kW5Q3ispSkcK8Kw@dpg-d67e79er433s73f4ertg-a.oregon-postgres.render.com:5432/testverse_database
 SECRET_KEY=your-very-secure-secret-key-here
-ALLOWED_HOSTS=your-app-name.onrender.com,your-custom-domain.com
-DATABASE_URL=postgresql://postgres:3gUpmZftRQff8qEh@db.dnayjechvtorpnfjplhz.supabase.co:5432/postgres
-DATABASE_PASSWORD=3gUpmZftRQff8qEh
+DEBUG=False
+ALLOWED_HOSTS=.onrender.com,your-custom-domain.com
+CELERY_BROKER_URL=redis://localhost:6379/0
+CELERY_RESULT_BACKEND=redis://localhost:6379/0
 ```
 
-### 2. Render Configuration
+## Pre-deployment Steps (Run locally)
 
-**Build Command:**
-```bash
-pip install -r requirements.txt && python manage.py collectstatic --noinput
-```
-
-**Start Command:**
-```bash
-gunicorn exam_system.wsgi:application
-```
-
-**Python Version:** 3.14 (specified in runtime.txt)
-
-### 3. Directory Structure for Render
-```
-your-repo/
-├── backend/
-│   ├── manage.py
-│   ├── requirements.txt
-│   ├── runtime.txt
-│   ├── exam_system/
-│   │   ├── settings.py
-│   │   ├── settings_production.py
-│   │   └── ...
-│   └── ...
-├── frontend/
-└── render.yaml
-```
-
-### 4. Deployment Steps
-
-1. **Connect Repository**: Link your GitHub repo to Render
-2. **Create Web Service**: Choose Python environment
-3. **Configure Build Settings**:
-   - Root Directory: `backend/`
-   - Build Command: `pip install -r requirements.txt && python manage.py collectstatic --noinput`
-   - Start Command: `gunicorn exam_system.wsgi:application`
-4. **Add Environment Variables** (as listed above)
-5. **Deploy**: Click "Create Web Service"
-
-### 5. Post-deployment Tasks
-
-After successful deployment:
-
-1. **Run Migrations**:
+1. **Make the deployment script executable**:
    ```bash
-   render run python manage.py migrate
+   chmod +x deploy_to_render.sh
    ```
 
-2. **Create Superuser**:
+2. **Run the deployment preparation**:
    ```bash
-   render run python manage.py createsuperuser
+   ./deploy_to_render.sh
    ```
 
-3. **Test API Endpoints**:
-   - Admin: `https://your-app-name.onrender.com/admin/`
-   - API: `https://your-app-name.onrender.com/api/`
+3. **Or run manually**:
+   ```bash
+   # Test database connection
+   python manage.py shell -c "from django.db import connection; print('Connection successful!')"
+   
+   # Run migrations
+   python manage.py migrate
+   
+   # Collect static files
+   python manage.py collectstatic --noinput
+   
+   # Create superuser
+   python manage.py createsuperuser
+   ```
 
-### 6. Common Issues & Solutions
+## Post-deployment Steps
 
-**Static Files Not Loading:**
-- Ensure `whitenoise` is in requirements.txt
-- Check `STATIC_ROOT` configuration
+1. **Access Django Admin**:
+   - URL: https://your-app-name.onrender.com/admin/
+   - Login with superuser credentials
 
-**Database Connection Issues:**
-- Verify Supabase project is active
-- Check DATABASE_URL format
-- Ensure SSL is required
+2. **Test API Endpoints**:
+   - Swagger Docs: https://your-app-name.onrender.com/api/schema/swagger-ui/
+   - Redoc Docs: https://your-app-name.onrender.com/api/schema/redoc/
 
-**CORS Errors:**
-- Update `CORS_ALLOWED_ORIGINS` in settings
-- Add your frontend domain
+3. **Monitor Logs**:
+   - Check Render dashboard for application logs
+   - Monitor for any deployment issues
 
-### 7. Monitoring & Maintenance
+## Troubleshooting
 
-- **Logs**: Check Render dashboard logs
-- **Health Checks**: Configure in Render settings
-- **Auto-deploys**: Enable for main branch
-- **SSL**: Automatically handled by Render
+### Common Issues:
 
-### 8. Scaling Options
+1. **Database Connection Failed**:
+   - Verify DATABASE_URL format
+   - Check if sslmode=require is included
+   - Ensure database is not paused on Render
 
-- **Free Tier**: Good for development/testing
-- **Starter Tier**: $7/month for production
-- **Pro Tier**: $29/month for high traffic
+2. **Migration Errors**:
+   - Check if all migrations are present
+   - Verify model relationships
+   - Look at Render logs for specific errors
 
-## 🛠️ Quick Commands
+3. **Static Files Not Loading**:
+   - Ensure Whitenoise is configured
+   - Check STATIC_ROOT and STATIC_URL settings
+   - Verify collectstatic was run
 
-**Local Testing with Render-like Environment:**
-```bash
-export DEBUG=False
-export SECRET_KEY=your-test-key
-export ALLOWED_HOSTS=localhost,127.0.0.1
-python manage.py runserver
+4. **Application Won't Start**:
+   - Check gunicorn command syntax
+   - Verify WSGI application path
+   - Review Render build logs
+
+## Health Check Endpoint
+
+Render will automatically check: `/` or `/health/`
+
+You can create a health check view in `views.py`:
+```python
+from django.http import JsonResponse
+
+def health_check(request):
+    return JsonResponse({'status': 'healthy'})
 ```
 
-**Check Production Readiness:**
-```bash
-python manage.py check --deploy
+Add to urls.py:
+```python
+path('health/', views.health_check, name='health_check'),
 ```
 
-Need help? Check the Render documentation or contact their support!
+## Scaling Considerations
+
+- **Free Tier**: Sleeps after 15 minutes of inactivity
+- **Paid Tier**: Choose appropriate instance size
+- **Database**: Monitor connection limits
+- **Background Tasks**: Consider separate worker for Celery
+
+## Security Notes
+
+- Never commit .env file to version control
+- Rotate SECRET_KEY for production
+- Use strong passwords for superuser
+- Enable HTTPS (automatic on Render)
+- Regular backup your database

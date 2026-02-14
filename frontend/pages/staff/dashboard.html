@@ -9,9 +9,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Core CSS -->
   <link rel="stylesheet" href="../../css/styles.css">
   <link rel="stylesheet" href="../../css/profile-dropdown-fix.css">
   
+  <!-- Page-specific CSS -->
   <link rel="stylesheet" href="../../css/pages/staff/dashboard.css">
 </head>
 <body>
@@ -185,161 +187,13 @@
     </div>
   </main>
   
+  <!-- Core Libraries -->
   <script src="../../js/config.js"></script>
   <script src="../../js/api.js"></script>
   <script src="../../js/auth.js"></script>
   <script src="../../js/utils.js"></script>
-  <script>
-    // Protect route
-    if (!Auth.requireStaff()) {
-      throw new Error('Unauthorized');
-    }
-    
-    // Profile dropdown toggle
-    function toggleProfileDropdown() {
-      const dropdown = document.getElementById('profile-dropdown');
-      dropdown.classList.toggle('active');
-    }
-    
-    // Close dropdown when clicking outside
-    document.addEventListener('click', (e) => {
-      const dropdown = document.getElementById('profile-dropdown');
-      if (!dropdown.contains(e.target)) {
-        dropdown.classList.remove('active');
-      }
-    });
-    
-    // Load user info
-    function loadUserInfo() {
-      const user = Auth.getCurrentUser();
-      if (user) {
-        document.getElementById('user-name').textContent = user.name || 'Staff';
-        document.getElementById('user-avatar').textContent = (user.name || 'S')[0].toUpperCase();
-        document.getElementById('dropdown-name').textContent = user.name || 'Staff';
-        document.getElementById('dropdown-email').textContent = user.email || '';
-      }
-    }
-    
-    // Load exams with error handling
-    async function loadExams() {
-      const tbody = document.getElementById('exams-tbody');
-      const tableContainer = document.querySelector('.exams-table-container');
-      
-      // Show loading state
-      tbody.innerHTML = `
-        <tr>
-          <td colspan="6" class="p-0">
-            <div class="loading-state">
-              <div class="skeleton skeleton-text" style="width: 100%; height: 48px; margin-bottom: 8px;"></div>
-              <div class="skeleton skeleton-text" style="width: 100%; height: 48px; margin-bottom: 8px;"></div>
-              <div class="skeleton skeleton-text" style="width: 100%; height: 48px;"></div>
-            </div>
-          </td>
-        </tr>
-      `;
-      
-      try {
-        const response = await API.getStaffExams({ limit: 10 });
-        const exams = response.results || [];
-        
-        // Update stats
-        const published = exams.filter(e => e.is_published).length;
-        const drafts = exams.filter(e => !e.is_published).length;
-        const totalAttempts = exams.reduce((sum, e) => sum + (e.student_count || 0), 0);
-        
-        document.getElementById('total-exams').textContent = response.count || exams.length;
-        document.getElementById('published-count').textContent = published;
-        document.getElementById('draft-count').textContent = drafts;
-        document.getElementById('total-students').textContent = totalAttempts;
-        
-        // Render table
-        if (exams.length === 0) {
-          tbody.innerHTML = `
-            <tr>
-              <td colspan="6">
-                <div class="empty-state">
-                  <div class="empty-state-icon">
-                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                      <polyline points="14 2 14 8 20 8"/>
-                    </svg>
-                  </div>
-                  <h3 class="empty-state-title">No exams yet</h3>
-                  <p class="empty-state-description">Get started by creating your first exam</p>
-                  <a href="exam-create.html" class="btn btn-primary">Create Exam</a>
-                </div>
-              </td>
-            </tr>
-          `;
-          return;
-        }
-        
-        tbody.innerHTML = exams.map(exam => {
-          const status = exam.is_published ? 'published' : 'draft';
-          return `
-            <tr>
-              <td>
-                <strong>${Utils.escapeHtml(exam.title)}</strong>
-              </td>
-              <td>
-                <span class="status-dot ${status}"></span>
-                ${status.charAt(0).toUpperCase() + status.slice(1)}
-              </td>
-              <td>${exam.question_count || 0}</td>
-              <td>${exam.student_count || 0}</td>
-              <td>${Utils.formatDate(exam.start_time)}</td>
-              <td>
-                <div class="table-actions">
-                  <a href="questions.html?exam=${exam.id}" class="btn btn-ghost btn-sm" title="Manage Questions">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                    </svg>
-                  </a>
-                  <a href="results.html?exam=${exam.id}" class="btn btn-ghost btn-sm" title="View Results">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M18 20V10"/>
-                      <path d="M12 20V4"/>
-                      <path d="M6 20v-6"/>
-                    </svg>
-                  </a>
-                </div>
-              </td>
-            </tr>
-          `;
-        }).join('');
-        
-      } catch (error) {
-        console.error('Error loading exams:', error);
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="6">
-              <div class="error-state">
-                <div class="error-state-icon">
-                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <circle cx="12" cy="12" r="10"/>
-                    <path d="M12 8v4M12 16h.01"/>
-                  </svg>
-                </div>
-                <h3 class="error-state-title">Failed to load exams</h3>
-                <p class="error-state-message">${Utils.escapeHtml(error.message)}</p>
-                <button class="btn btn-secondary" onclick="loadExams()">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M1 4v6h6M23 20v-6h-6"/>
-                    <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/>
-                  </svg>
-                  Retry
-                </button>
-              </div>
-            </td>
-          </tr>
-        `;
-      }
-    }
-    
-    // Init
-    loadUserInfo();
-    loadExams();
-  </script>
+  
+  <!-- Page-specific Script -->
+  <script src="../../js/staff-dashboard.js"></script>
 </body>
 </html>

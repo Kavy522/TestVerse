@@ -9,135 +9,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Core CSS -->
   <link rel="stylesheet" href="../../css/styles.css">
-  <style>
-    .analytics-container { max-width: 1000px; margin: 0 auto; }
-    
-    .analytics-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: var(--space-4);
-      margin-bottom: var(--space-6);
-    }
-    
-    .stat-card {
-      background: var(--bg-secondary);
-      border-radius: var(--radius-lg);
-      padding: var(--space-5);
-      text-align: center;
-    }
-    
-    .stat-card h3 {
-      font-size: 2.5rem;
-      font-weight: 700;
-      margin-bottom: var(--space-1);
-    }
-    
-    .stat-card p { color: var(--text-secondary); font-size: 0.875rem; }
-    
-    .stat-card.primary h3 { color: var(--primary); }
-    .stat-card.success h3 { color: #10b981; }
-    .stat-card.warning h3 { color: #f59e0b; }
-    
-    /* Chart Container */
-    .chart-container {
-      background: var(--bg-secondary);
-      border-radius: var(--radius-xl);
-      padding: var(--space-6);
-      margin-bottom: var(--space-6);
-    }
-    
-    .chart-title {
-      font-size: 1.25rem;
-      font-weight: 600;
-      margin-bottom: var(--space-4);
-    }
-    
-    /* Simple Bar Chart */
-    .bar-chart {
-      display: flex;
-      align-items: flex-end;
-      gap: var(--space-2);
-      height: 200px;
-      padding-top: var(--space-4);
-    }
-    
-    .bar-item {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: var(--space-2);
-      min-width: 0;
-    }
-    
-    .bar {
-      width: 100%;
-      max-width: 60px;
-      background: var(--primary);
-      border-radius: var(--radius-md) var(--radius-md) 0 0;
-      transition: height 0.5s ease;
-      min-height: 4px;
-    }
-    
-    .bar.passed { background: #10b981; }
-    .bar.failed { background: #ef4444; }
-    
-    .bar-label {
-      font-size: 0.625rem;
-      color: var(--text-tertiary);
-      text-align: center;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      max-width: 100%;
-    }
-    
-    .bar-value {
-      font-size: 0.75rem;
-      font-weight: 600;
-    }
-    
-    /* Badges Grid */
-    .badges-section {
-      background: var(--bg-secondary);
-      border-radius: var(--radius-xl);
-      padding: var(--space-6);
-    }
-    
-    .badges-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-      gap: var(--space-4);
-    }
-    
-    .badge-card {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: var(--space-4);
-      background: var(--bg-tertiary);
-      border-radius: var(--radius-lg);
-      text-align: center;
-    }
-    
-    .badge-icon { font-size: 2.5rem; margin-bottom: var(--space-2); }
-    .badge-name { font-weight: 500; font-size: 0.875rem; }
-    .badge-date { font-size: 0.75rem; color: var(--text-tertiary); }
-    
-    .improvement-indicator {
-      display: inline-flex;
-      align-items: center;
-      gap: var(--space-2);
-      padding: var(--space-2) var(--space-3);
-      border-radius: var(--radius-full);
-      font-size: 0.875rem;
-      font-weight: 500;
-    }
-    
-    .improvement-indicator.positive { background: rgba(16, 185, 129, 0.2); color: #10b981; }
-    .improvement-indicator.negative { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
-  </style>
+  <link rel="stylesheet" href="../../css/profile-dropdown-fix.css">
+  
+  <!-- Page-specific CSS -->
+  <link rel="stylesheet" href="../../css/pages/student/analytics.css">
 </head>
 <body>
   <!-- Navbar -->
@@ -155,13 +32,70 @@
         
         <div class="navbar-menu">
           <a href="dashboard.html" class="navbar-link">Dashboard</a>
-          <a href="history.html" class="navbar-link">Exam History</a>
           <a href="analytics.html" class="navbar-link active">Analytics</a>
           <a href="leaderboard.html" class="navbar-link">Leaderboard</a>
+          <a href="history.html" class="navbar-link">Exam History</a>
+          <a href="results.html" class="navbar-link">My Results</a>
+          <a href="profile.html" class="navbar-link">Profile</a>
         </div>
         
         <div class="navbar-user">
-          <button class="btn btn-ghost btn-sm" onclick="Auth.logout()">Logout</button>
+          <div class="profile-dropdown" id="profile-dropdown">
+            <button class="profile-dropdown-toggle" onclick="toggleProfileDropdown()">
+              <span class="text-muted text-sm" id="user-name">Loading...</span>
+              <div class="navbar-avatar" id="user-avatar">?</div>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+            <div class="profile-dropdown-menu">
+              <div class="profile-dropdown-header">
+                <div class="profile-dropdown-name" id="dropdown-name">Student</div>
+                <div class="profile-dropdown-email" id="dropdown-email">student@example.com</div>
+              </div>
+              <a href="dashboard.html" class="profile-dropdown-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                  <polyline points="9 22 9 12 15 12 15 22"/>
+                </svg>
+                Dashboard
+              </a>
+              <a href="analytics.html" class="profile-dropdown-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="20" x2="18" y2="10"/>
+                  <line x1="12" y1="20" x2="12" y2="4"/>
+                  <line x1="6" y1="20" x2="6" y2="14"/>
+                </svg>
+                Analytics
+              </a>
+              <a href="leaderboard.html" class="profile-dropdown-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                  <circle cx="8.5" cy="7" r="4"/>
+                  <polyline points="17 11 19 13 23 9"/>
+                </svg>
+                Leaderboard
+              </a>
+              <a href="results.html" class="profile-dropdown-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="16" y1="13" x2="8" y2="13"/>
+                  <line x1="16" y1="17" x2="8" y2="17"/>
+                </svg>
+                My Results
+              </a>
+              <div class="profile-dropdown-divider"></div>
+              <button class="profile-dropdown-item danger" onclick="Auth.logout()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                  <polyline points="16 17 21 12 16 7"/>
+                  <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+                Logout
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -201,112 +135,13 @@
     </div>
   </main>
   
+  <!-- Core Libraries -->
   <script src="../../js/config.js"></script>
   <script src="../../js/api.js"></script>
   <script src="../../js/auth.js"></script>
   <script src="../../js/utils.js"></script>
-  <script>
-    if (!Auth.requireAuth()) {
-      throw new Error('Unauthorized');
-    }
-    
-    // Load analytics data
-    async function loadAnalytics() {
-      const statsGrid = document.getElementById('stats-grid');
-      const chart = document.getElementById('performance-chart');
-      
-      try {
-        const data = await API.getStudentAnalytics();
-        
-        // Render stats
-        const improvementClass = data.improvement >= 0 ? 'positive' : 'negative';
-        const improvementIcon = data.improvement >= 0 ? '↗' : '↘';
-        
-        statsGrid.innerHTML = `
-          <div class="stat-card primary">
-            <h3>${data.total_exams}</h3>
-            <p>Total Exams</p>
-          </div>
-          <div class="stat-card success">
-            <h3>${data.pass_rate}%</h3>
-            <p>Pass Rate</p>
-          </div>
-          <div class="stat-card">
-            <h3>${data.average_score}%</h3>
-            <p>Average Score</p>
-          </div>
-          <div class="stat-card warning">
-            <h3>${data.total_points}</h3>
-            <p>Total Points</p>
-          </div>
-          <div class="stat-card">
-            <h3>${data.badge_count}</h3>
-            <p>Badges Earned</p>
-          </div>
-          <div class="stat-card">
-            <div class="improvement-indicator ${improvementClass}">
-              ${improvementIcon} ${Math.abs(data.improvement)}%
-            </div>
-            <p style="margin-top: var(--space-2);">Improvement</p>
-          </div>
-        `;
-        
-        // Render chart
-        if (data.recent_results && data.recent_results.length > 0) {
-          const maxScore = 100;
-          chart.innerHTML = data.recent_results.map(r => {
-            const height = (r.percentage / maxScore) * 180;
-            const barClass = r.is_passed ? 'passed' : 'failed';
-            const title = r.exam__title.length > 12 ? r.exam__title.substring(0, 12) + '…' : r.exam__title;
-            return `
-              <div class="bar-item">
-                <div class="bar-value">${Math.round(r.percentage)}%</div>
-                <div class="bar ${barClass}" style="height: ${height}px;"></div>
-                <div class="bar-label" title="${Utils.escapeHtml(r.exam__title)}">${Utils.escapeHtml(title)}</div>
-              </div>
-            `;
-          }).join('');
-        } else {
-          chart.innerHTML = '<p class="text-center text-muted" style="width: 100%;">No exam data yet. Complete some exams to see your trend!</p>';
-        }
-        
-      } catch (error) {
-        console.error('Error loading analytics:', error);
-        statsGrid.innerHTML = '<p class="text-danger">Failed to load analytics</p>';
-        chart.innerHTML = '<p class="text-danger">Failed to load chart</p>';
-      }
-    }
-    
-    // Load badges
-    async function loadBadges() {
-      const grid = document.getElementById('badges-grid');
-      
-      try {
-        const response = await API.getUserBadges();
-        const badges = response.results || response || [];
-        
-        if (badges.length === 0) {
-          grid.innerHTML = '<p class="text-muted">No badges earned yet. Keep taking exams to earn badges!</p>';
-          return;
-        }
-        
-        grid.innerHTML = badges.map(ub => `
-          <div class="badge-card">
-            <div class="badge-icon">${ub.badge.icon}</div>
-            <div class="badge-name">${Utils.escapeHtml(ub.badge.name)}</div>
-            <div class="badge-date">${Utils.formatDate(ub.earned_at)}</div>
-          </div>
-        `).join('');
-        
-      } catch (error) {
-        console.error('Error loading badges:', error);
-        grid.innerHTML = '<p class="text-muted">Failed to load badges</p>';
-      }
-    }
-    
-    // Init
-    loadAnalytics();
-    loadBadges();
-  </script>
+  
+  <!-- Page-specific Script -->
+  <script src="../../js/student-analytics.js"></script>
 </body>
 </html>
